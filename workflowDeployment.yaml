@@ -25,14 +25,28 @@ parameters:
     displayName: 'Logicapps processor Name'
     type: string
     default: 'SNDMMOPROCESSORLA1401'     
-  - name: appSettingsKey1  
-    displayName: 'App Settings Key value for refdata'
+  - name: storageAccountName
+    displayName: 'Storage Account Name'
+    type: string
+    default: 'sndmmoinfst1405'
+  - name: storageAccountRGName
+    displayName: 'Storage Account Resource Groupd Name'
+    type: string
+    default: 'SNDMMOINFRG1402'
+  - name: common_appSettingsKey  
+    displayName: 'Common API connection Runtime URL'
     type: string
     default: 'COMMON_API_CONNECTION_RUNTIME_URL'  
-  - name: appSettingsKey2 
-    displayName: 'App Settings Key value for processor'
+
+  - name: servicebus_appSettingsKey
+    displayName: 'Service Bus Connection Runtime URL'
     type: string
     default: 'SERVICEBUS_CONNECTION_RUNTIME_URL'   
+
+  - name: storage_appSettingsKey
+    displayName: 'storage account connection string'
+    type: string
+    default: 'AzureWebJobsStorage'   
 
 pool:
   name: DEFRA-COMMON-ubuntu2204-SSV5
@@ -45,7 +59,17 @@ steps:
     azureSubscription: 'AZR-MMO-SND1'
     scriptType: pscore
     scriptPath: scripts/UpdateAppSettings.ps1
-    arguments: '-resourceGroupName "${{ parameters.resourceGroupName }}" -apiConnectionName "${{ parameters.apiConnectionName }}" -servicebusConnectionName "${{ parameters.servicebusConnectionName }}" -logicappsrefdataName "${{ parameters.logicappsrefdataName }}" -logicappsprocessorName "${{ parameters.logicappsprocessorName }}" -appSettingsKey1 "${{ parameters.appSettingsKey1 }}" -appSettingsKey2 "${{ parameters.appSettingsKey2 }}"'
+    arguments: >
+      -resourceGroupName "${{ parameters.resourceGroupName }}" 
+      -apiConnectionName "${{ parameters.apiConnectionName }}" 
+      -servicebusConnectionName "${{ parameters.servicebusConnectionName }}" 
+      -logicappsrefdataName "${{ parameters.logicappsrefdataName }}" 
+      -logicappsprocessorName "${{ parameters.logicappsprocessorName }}" 
+      -common_appSettingsKey "${{ parameters.common_appSettingsKey }}" 
+      -servicebus_appSettingsKey "${{ parameters.servicebus_appSettingsKey }}" 
+      -storage_appSettingsKey "${{ parameters.storage_appSettingsKey }}" 
+      -storageAccountName "${{ parameters.storageAccountName}}" 
+      -storageAccountRGName "${{ parameters.storageAccountRGName}}"
 
 - task: ArchiveFiles@2
   displayName: 'Archive'
