@@ -1,0 +1,80 @@
+
+trigger:
+  branches:
+    include:
+    - 'main'
+
+parameters:
+  - name: resourceGroupName
+    displayName: 'Resource Group Name'
+    type: string
+    default: 'SNDMMOINFRG1401'
+  - name: apiConnectionName
+    displayName: 'API Connection Name'
+    type: string
+    default: 'SNDMMOINFRG1402-API-CONNECTION'
+  - name: servicebusConnectionName
+    displayName: 'Servicebus Connection Name'
+    type: string
+    default: 'SNDMMOSERVICEBUS-API-CONNECTION'  
+  - name: logicappsrefdataName
+    displayName: 'Logicapps refdataName'
+    type: string
+    default: 'SNDMMOREFDATALA1401' 
+  - name: logicappsprocessorName
+    displayName: 'Logicapps processor Name'
+    type: string
+    default: 'SNDMMOPROCESSORLA1401'     
+  - name: appSettingsKey1  
+    displayName: 'App Settings Key value for refdata'
+    type: string
+    default: 'COMMON_API_CONNECTION_RUNTIME_URL'  
+  - name: appSettingsKey2 
+    displayName: 'App Settings Key value for processor'
+    type: string
+    default: 'SERVICEBUS_CONNECTION_RUNTIME_URL'   
+
+pool:
+  name: DEFRA-COMMON-ubuntu2204-SSV5
+
+
+steps:
+- task: AzureCLI@2
+  displayName: 'Update App Settings copy'
+  inputs:
+    azureSubscription: 'AZR-MMO-SND1'
+    scriptType: pscore
+    scriptPath: scripts/UpdateAppSettings.ps1
+    arguments: '-resourceGroupName "${{ parameters.resourceGroupName }}" -apiConnectionName "${{ parameters.apiConnectionName }}" -servicebusConnectionName "${{ parameters.servicebusConnectionName }}" -logicappsrefdataName "${{ parameters.logicappsrefdataName }}" -logicappsprocessorName "${{ parameters.logicappsprocessorName }}" -appSettingsKey1 "${{ parameters.appSettingsKey1 }}" -appSettingsKey2 "${{ parameters.appSettingsKey2 }}"'
+
+- task: ArchiveFiles@2
+  displayName: 'Archive'
+  inputs:
+    rootFolderOrFile: 'mmo-ecc-dyn-processor-refdata-workflow'
+    includeRootFolder: false
+    archiveFile: '$(System.DefaultWorkingDirectory)/refdata-workflow$(Build.BuildId).zip'
+
+- task: AzureFunctionApp@1
+  displayName: 'Azure Function refdata workflow Deploy'
+  inputs:
+    azureSubscription: 'AZR-MMO-SND1'
+    appType: functionApp
+    appName: ${{ parameters.logicappsrefdataName }}
+    package: '$(System.DefaultWorkingDirectory)/refdata-workflow$(Build.BuildId).zip'
+    deploymentMethod: zipDeploy
+
+- task: ArchiveFiles@2
+  displayName: 'Archive'
+  inputs:
+    rootFolderOrFile: 'mmo-ecc-dyn-processor-workflow'
+    includeRootFolder: false
+    archiveFile: '$(System.DefaultWorkingDirectory)/processor-workflow$(Build.BuildId).zip'
+
+- task: AzureFunctionApp@1
+  displayName: 'Azure Function processor workflow Deploy '
+  inputs:
+    azureSubscription: 'AZR-MMO-SND1'
+    appType: functionApp
+    appName: ${{ parameters.logicappsprocessorName }}
+    package: '$(System.DefaultWorkingDirectory)/processor-workflow$(Build.BuildId).zip'
+    deploymentMethod: zipDeploy

@@ -1,0 +1,323 @@
+{
+    "definition": {
+        "metadata": {
+            "ExportMetadata": {
+                "ExportCorrelationId": "5f792076-9259-4031-b328-23a91ea315e2",
+                "ExportDate": "2024-12-03T15:46:52"
+            }
+        },
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "contentVersion": "1.0.0.0",
+        "triggers": {
+            "Recurrence": {
+                "recurrence": {
+                    "frequency": "Month",
+                    "interval": 1
+                },
+                "evaluatedRecurrence": {
+                    "frequency": "Month",
+                    "interval": 1
+                },
+                "type": "Recurrence"
+            }
+        },
+        "actions": {
+            "Get_Case_Types": {
+                "runAfter": {},
+                "type": "ApiConnection",
+                "inputs": {
+                    "host": {
+                        "connection": {
+                            "name": null,
+                            "referenceName": "commondataservice"
+                        }
+                    },
+                    "method": "get",
+                    "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('https://org4a4f0d20.crm4.dynamics.com/'))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_casetypes'))}/items"
+                }
+            },
+            "Get_Devolved_Administrations": {
+                "runAfter": {
+                    "Insert_Presentations_into_DB": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "ApiConnection",
+                "inputs": {
+                    "host": {
+                        "connection": {
+                            "name": null,
+                            "referenceName": "commondataservice"
+                        }
+                    },
+                    "method": "get",
+                    "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('https://org4a4f0d20.crm4.dynamics.com/'))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_devolvedadministrations'))}/items"
+                }
+            },
+            "Get_Landing_Statuses": {
+                "runAfter": {
+                    "Insert_Case_Types_into_DB": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "ApiConnection",
+                "inputs": {
+                    "host": {
+                        "connection": {
+                            "name": null,
+                            "referenceName": "commondataservice"
+                        }
+                    },
+                    "method": "get",
+                    "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('https://org4a4f0d20.crm4.dynamics.com/'))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_validationstatuses'))}/items"
+                }
+            },
+            "Get_Presentations": {
+                "runAfter": {
+                    "Insert_States_into_DB": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "ApiConnection",
+                "inputs": {
+                    "host": {
+                        "connection": {
+                            "name": null,
+                            "referenceName": "commondataservice"
+                        }
+                    },
+                    "method": "get",
+                    "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('https://org4a4f0d20.crm4.dynamics.com/'))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_presentations'))}/items"
+                }
+            },
+            "Get_Species": {
+                "runAfter": {
+                    "Insert_Landing_Statuses_into_DB": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "ApiConnection",
+                "inputs": {
+                    "host": {
+                        "connection": {
+                            "name": null,
+                            "referenceName": "commondataservice"
+                        }
+                    },
+                    "method": "get",
+                    "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('https://org4a4f0d20.crm4.dynamics.com/'))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_species'))}/items"
+                },
+                "runtimeConfiguration": {
+                    "paginationPolicy": {
+                        "minimumItemCount": 9999
+                    }
+                }
+            },
+            "Get_States": {
+                "runAfter": {
+                    "Insert_Species_into_DB": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "ApiConnection",
+                "inputs": {
+                    "host": {
+                        "connection": {
+                            "name": null,
+                            "referenceName": "commondataservice"
+                        }
+                    },
+                    "method": "get",
+                    "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('https://org4a4f0d20.crm4.dynamics.com/'))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_states'))}/items"
+                }
+            },
+            "Insert_Case_Types_into_DB": {
+                "foreach": "@body('Get_Case_Types')?['value']",
+                "actions": {
+                    "Insert_And_Replace_Case_Types": {
+                        "runAfter": {},
+                        "type": "Http",
+                        "inputs": {
+                            "authentication": {
+                                "audience": "https://storage.azure.com",
+                                "type": "ManagedServiceIdentity"
+                            },
+                            "body": {
+                                "id": "@items('Insert_Case_Types_into_DB')?['mmofe_casetypeid']"
+                            },
+                            "headers": {
+                                "Accept": "application/json",
+                                "x-ms-version": "2019-07-07"
+                            },
+                            "method": "PUT",
+                            "uri": "https://sndmmoinfst1405.table.core.windows.net/mmorefdata(PartitionKey='CaseType',RowKey='@{encodeURIComponent(items('Insert_Case_Types_into_DB')?['mmofe_name'])}')"
+                        }
+                    }
+                },
+                "runAfter": {
+                    "Get_Case_Types": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Foreach"
+            },
+            "Insert_Devolved_Administrations_into_DB": {
+                "foreach": "@body('Get_Devolved_Administrations')?['value']",
+                "actions": {
+                    "Insert_And_Replace_Administrations": {
+                        "runAfter": {},
+                        "type": "Http",
+                        "inputs": {
+                            "authentication": {
+                                "audience": "https://storage.azure.com",
+                                "type": "ManagedServiceIdentity"
+                            },
+                            "body": {
+                                "id": "@items('Insert_Devolved_Administrations_into_DB')?['mmofe_devolvedadministrationid']"
+                            },
+                            "headers": {
+                                "Accept": "application/json",
+                                "x-ms-version": "2019-07-07"
+                            },
+                            "method": "PUT",
+                            "uri": "https://sndmmoinfst1405.table.core.windows.net/mmorefdata(PartitionKey='DevolvedAdministrations',RowKey='@{encodeURIComponent(items('Insert_Devolved_Administrations_into_DB')?['mmofe_name'])}')"
+                        }
+                    }
+                },
+                "runAfter": {
+                    "Get_Devolved_Administrations": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Foreach"
+            },
+            "Insert_Landing_Statuses_into_DB": {
+                "foreach": "@body('Get_Landing_Statuses')?['value']",
+                "actions": {
+                    "Insert_And_Replace_Statuses": {
+                        "runAfter": {},
+                        "type": "Http",
+                        "inputs": {
+                            "authentication": {
+                                "audience": "https://storage.azure.com",
+                                "type": "ManagedServiceIdentity"
+                            },
+                            "body": {
+                                "id": "@items('Insert_Landing_Statuses_into_DB')?['mmofe_validationstatusid']"
+                            },
+                            "headers": {
+                                "Accept": "application/json",
+                                "x-ms-version": "2019-07-07"
+                            },
+                            "method": "PUT",
+                            "uri": "https://sndmmoinfst1405.table.core.windows.net/mmorefdata(PartitionKey='LandingStatus',RowKey='@{encodeURIComponent(items('Insert_Landing_Statuses_into_DB')?['mmofe_name'])}')"
+                        }
+                    }
+                },
+                "runAfter": {
+                    "Get_Landing_Statuses": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Foreach"
+            },
+            "Insert_Presentations_into_DB": {
+                "foreach": "@body('Get_Presentations')?['value']",
+                "actions": {
+                    "Insert_And_Replace_Presentations": {
+                        "runAfter": {},
+                        "type": "Http",
+                        "inputs": {
+                            "authentication": {
+                                "audience": "https://storage.azure.com",
+                                "type": "ManagedServiceIdentity"
+                            },
+                            "body": {
+                                "id": "@items('Insert_Presentations_into_DB')?['mmofe_presentationid']"
+                            },
+                            "headers": {
+                                "Accept": "application/json",
+                                "x-ms-version": "2019-07-07"
+                            },
+                            "method": "PUT",
+                            "uri": "https://sndmmoinfst1405.table.core.windows.net/mmorefdata(PartitionKey='Presentation',RowKey='@{encodeURIComponent(items('Insert_Presentations_into_DB')?['mmofe_name'])}')"
+                        }
+                    }
+                },
+                "runAfter": {
+                    "Get_Presentations": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Foreach"
+            },
+            "Insert_Species_into_DB": {
+                "foreach": "@body('Get_Species')?['value']",
+                "actions": {
+                    "Insert_And_Replace_Species": {
+                        "runAfter": {},
+                        "type": "Http",
+                        "inputs": {
+                            "authentication": {
+                                "audience": "https://storage.azure.com",
+                                "type": "ManagedServiceIdentity"
+                            },
+                            "body": {
+                                "id": "@items('Insert_Species_into_DB')?['mmofe_specieid']"
+                            },
+                            "headers": {
+                                "Accept": "application/json",
+                                "x-ms-version": "2019-07-07"
+                            },
+                            "method": "PUT",
+                            "uri": "https://sndmmoinfst1405.table.core.windows.net/mmorefdata(PartitionKey='Species',RowKey='@{encodeURIComponent(items('Insert_Species_into_DB')?['mmofe_name'])}')"
+                        }
+                    }
+                },
+                "runAfter": {
+                    "Get_Species": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Foreach",
+                "runtimeConfiguration": {
+                    "concurrency": {
+                        "repetitions": 50
+                    }
+                }
+            },
+            "Insert_States_into_DB": {
+                "foreach": "@body('Get_States')?['value']",
+                "actions": {
+                    "Insert_And_Replace_States": {
+                        "runAfter": {},
+                        "type": "Http",
+                        "inputs": {
+                            "authentication": {
+                                "audience": "https://storage.azure.com",
+                                "type": "ManagedServiceIdentity"
+                            },
+                            "body": {
+                                "id": "@items('Insert_States_into_DB')?['mmofe_stateid']"
+                            },
+                            "headers": {
+                                "Accept": "application/json",
+                                "x-ms-version": "2019-07-07"
+                            },
+                            "method": "PUT",
+                            "uri": "https://sndmmoinfst1405.table.core.windows.net/mmorefdata(PartitionKey='State',RowKey='@{encodeURIComponent(items('Insert_States_into_DB')?['mmofe_name'])}')"
+                        }
+                    }
+                },
+                "runAfter": {
+                    "Get_States": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Foreach"
+            }
+        },
+        "outputs": {}
+    },
+    "kind": "Stateful"
+}

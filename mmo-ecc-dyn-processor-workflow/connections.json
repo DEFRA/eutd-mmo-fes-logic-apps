@@ -1,0 +1,48 @@
+{
+    "managedApiConnections": {
+        "commondataservice": {
+            "api": {
+                "id": "/subscriptions/@{appsetting('WORKFLOWS_SUBSCRIPTION_ID')}/providers/Microsoft.Web/locations/@{appsetting('RESOURCEGROUP_LOCATION')}/managedApis/commondataservice"
+            },
+            "authentication": {
+                "type": "ManagedServiceIdentity"
+            },
+            "connection": {
+                "id": "/subscriptions/@{appsetting('WORKFLOWS_SUBSCRIPTION_ID')}/resourceGroups/@{appsetting('RESOURCEGROUP_NAME')}/providers/Microsoft.Web/connections/@{appsetting('COMMON_API_CONNECTION_NAME')}"
+            },
+            "connectionRuntimeUrl": "@{appsetting('COMMON_API_CONNECTION_RUNTIME_URL')}",
+            "displayName": "commondataservice"
+        },
+        "refDataTable": {
+            "api": {
+                "id": "/subscriptions/@{appsetting('WORKFLOWS_SUBSCRIPTION_ID')}/providers/Microsoft.Web/locations/@{appsetting('RESOURCEGROUP_LOCATION')}/managedApis/refDataTable"
+            },
+            "authentication": {
+                "type": "ManagedServiceIdentity"
+            },
+            "connection": {
+                "id": "/subscriptions/@{appsetting('WORKFLOWS_SUBSCRIPTION_ID')}/resourceGroups/@{appsetting('RESOURCEGROUP_NAME')}/providers/Microsoft.Web/connections/@{appsetting('REFDATA_STORAGE_CONNECTION_NAME')}"
+            },
+            "displayName": "refDataTable"
+        },
+        "servicebus": {
+            "api": {
+                "id": "/subscriptions/@{appsetting('WORKFLOWS_SUBSCRIPTION_ID')}/providers/Microsoft.Web/locations/@{appsetting('RESOURCEGROUP_LOCATION')}/managedApis/servicebus"
+            },
+            "authentication": {
+                "type": "ManagedServiceIdentity"
+            },
+            "connection": {
+                "id": "/subscriptions/@{appsetting('WORKFLOWS_SUBSCRIPTION_ID')}/resourceGroups/@{appsetting('RESOURCEGROUP_NAME')}/providers/Microsoft.Web/connections/@{appsetting('SERVICE_BUS_CONNECTION_NAME')}"
+            },
+            "connectionProperties": {
+                "authentication": {
+                    "audience": "https://servicebus.azure.net",
+                    "type": "ManagedServiceIdentity"
+                }
+            },
+            "connectionRuntimeUrl": "@{appsetting('SERVICEBUS_CONNECTION_RUNTIME_URL')}"
+        }
+    },
+    "serviceProviderConnections": {}
+}

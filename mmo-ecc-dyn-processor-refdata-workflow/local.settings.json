@@ -1,0 +1,11 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "APP_KIND": "workflowapp",
+    "ProjectDirectoryPath": "c:\\projects\\Defra_project\\DEFRA_FES\\Defra-MMO-FES\\mmo-fes-core-infra-rtl\\bicepInfraTemplates\\modules\\workflow\\mmo-ecc-dyn-processor-refdata",
+    "FUNCTIONS_WORKER_RUNTIME": "node",   
+    "SNDMMOINFRG1402-API-CONNECTION-std-RawAuthKey": "",
+    "SNDMMOINFRG1402-API-CONNECTION-std-RuntimeUrl": ""
+  }
+}
