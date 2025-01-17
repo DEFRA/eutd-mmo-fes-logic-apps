@@ -1,104 +1,102 @@
-
 trigger:
   branches:
     include:
-    - 'main'
+      - "main"
 
 parameters:
   - name: resourceGroupName
-    displayName: 'Resource Group Name'
+    displayName: "Resource Group Name"
     type: string
-    default: 'SNDMMOINFRG1401'
+    default: "SNDMMOINFRG1401"
   - name: apiConnectionName
-    displayName: 'API Connection Name'
+    displayName: "API Connection Name"
     type: string
-    default: 'SNDMMOINFRG1402-API-CONNECTION'
+    default: "SNDMMOINFRG1402-API-CONNECTION-01"
   - name: servicebusConnectionName
-    displayName: 'Servicebus Connection Name'
+    displayName: "Servicebus Connection Name"
     type: string
-    default: 'SNDMMOSERVICEBUS-API-CONNECTION'  
+    default: "SNDMMOSERVICEBUS-API-CONNECTION-01"
   - name: logicappsrefdataName
-    displayName: 'Logicapps refdataName'
+    displayName: "Logicapps refdataName"
     type: string
-    default: 'SNDMMOREFDATALA1401' 
+    default: "SNDMMOREFDATALA1401"
   - name: logicappsprocessorName
-    displayName: 'Logicapps processor Name'
+    displayName: "Logicapps processor Name"
     type: string
-    default: 'SNDMMOPROCESSORLA1401'     
+    default: "SNDMMOPROCESSORLA1401"
   - name: storageAccountName
-    displayName: 'Storage Account Name'
+    displayName: "Storage Account Name"
     type: string
-    default: 'sndmmoinfst1405'
+    default: "sndmmoinfst1405"
   - name: storageAccountRGName
-    displayName: 'Storage Account Resource Groupd Name'
+    displayName: "Storage Account Resource Groupd Name"
     type: string
-    default: 'SNDMMOINFRG1402'
-  - name: common_appSettingsKey  
-    displayName: 'Common API connection Runtime URL'
+    default: "SNDMMOINFRG1402"
+  - name: common_appSettingsKey
+    displayName: "Common API connection Runtime URL"
     type: string
-    default: 'COMMON_API_CONNECTION_RUNTIME_URL'  
+    default: "COMMON_API_CONNECTION_RUNTIME_URL"
 
   - name: servicebus_appSettingsKey
-    displayName: 'Service Bus Connection Runtime URL'
+    displayName: "Service Bus Connection Runtime URL"
     type: string
-    default: 'SERVICEBUS_CONNECTION_RUNTIME_URL'   
+    default: "SERVICEBUS_CONNECTION_RUNTIME_URL"
 
   - name: storage_appSettingsKey
-    displayName: 'storage account connection string'
+    displayName: "storage account connection string"
     type: string
-    default: 'AzureWebJobsStorage'   
+    default: "AzureWebJobsStorage"
 
 pool:
   name: DEFRA-COMMON-ubuntu2204-SSV5
 
-
 steps:
-- task: AzureCLI@2
-  displayName: 'Update App Settings copy'
-  inputs:
-    azureSubscription: 'AZR-MMO-SND1'
-    scriptType: pscore
-    scriptPath: scripts/UpdateAppSettings.ps1
-    arguments: >
-      -resourceGroupName "${{ parameters.resourceGroupName }}" 
-      -apiConnectionName "${{ parameters.apiConnectionName }}" 
-      -servicebusConnectionName "${{ parameters.servicebusConnectionName }}" 
-      -logicappsrefdataName "${{ parameters.logicappsrefdataName }}" 
-      -logicappsprocessorName "${{ parameters.logicappsprocessorName }}" 
-      -common_appSettingsKey "${{ parameters.common_appSettingsKey }}" 
-      -servicebus_appSettingsKey "${{ parameters.servicebus_appSettingsKey }}" 
-      -storage_appSettingsKey "${{ parameters.storage_appSettingsKey }}" 
-      -storageAccountName "${{ parameters.storageAccountName}}" 
-      -storageAccountRGName "${{ parameters.storageAccountRGName}}"
+  - task: AzureCLI@2
+    displayName: "Update App Settings copy"
+    inputs:
+      azureSubscription: "AZR-MMO-SND1"
+      scriptType: pscore
+      scriptPath: scripts/UpdateAppSettings.ps1
+      arguments: >
+        -resourceGroupName "${{ parameters.resourceGroupName }}" 
+        -apiConnectionName "${{ parameters.apiConnectionName }}" 
+        -servicebusConnectionName "${{ parameters.servicebusConnectionName }}" 
+        -logicappsrefdataName "${{ parameters.logicappsrefdataName }}" 
+        -logicappsprocessorName "${{ parameters.logicappsprocessorName }}" 
+        -common_appSettingsKey "${{ parameters.common_appSettingsKey }}" 
+        -servicebus_appSettingsKey "${{ parameters.servicebus_appSettingsKey }}" 
+        -storage_appSettingsKey "${{ parameters.storage_appSettingsKey }}" 
+        -storageAccountName "${{ parameters.storageAccountName}}" 
+        -storageAccountRGName "${{ parameters.storageAccountRGName}}"
 
-- task: ArchiveFiles@2
-  displayName: 'Archive'
-  inputs:
-    rootFolderOrFile: 'mmo-ecc-dyn-processor-refdata-workflow'
-    includeRootFolder: false
-    archiveFile: '$(System.DefaultWorkingDirectory)/refdata-workflow$(Build.BuildId).zip'
+  - task: ArchiveFiles@2
+    displayName: "Archive"
+    inputs:
+      rootFolderOrFile: "mmo-ecc-dyn-processor-refdata-workflow"
+      includeRootFolder: false
+      archiveFile: "$(System.DefaultWorkingDirectory)/refdata-workflow$(Build.BuildId).zip"
 
-- task: AzureFunctionApp@1
-  displayName: 'Azure Function refdata workflow Deploy'
-  inputs:
-    azureSubscription: 'AZR-MMO-SND1'
-    appType: functionApp
-    appName: ${{ parameters.logicappsrefdataName }}
-    package: '$(System.DefaultWorkingDirectory)/refdata-workflow$(Build.BuildId).zip'
-    deploymentMethod: zipDeploy
+  - task: AzureFunctionApp@1
+    displayName: "Azure Function refdata workflow Deploy"
+    inputs:
+      azureSubscription: "AZR-MMO-SND1"
+      appType: functionApp
+      appName: ${{ parameters.logicappsrefdataName }}
+      package: "$(System.DefaultWorkingDirectory)/refdata-workflow$(Build.BuildId).zip"
+      deploymentMethod: zipDeploy
 
-- task: ArchiveFiles@2
-  displayName: 'Archive'
-  inputs:
-    rootFolderOrFile: 'mmo-ecc-dyn-processor-workflow'
-    includeRootFolder: false
-    archiveFile: '$(System.DefaultWorkingDirectory)/processor-workflow$(Build.BuildId).zip'
+  - task: ArchiveFiles@2
+    displayName: "Archive"
+    inputs:
+      rootFolderOrFile: "mmo-ecc-dyn-processor-workflow"
+      includeRootFolder: false
+      archiveFile: "$(System.DefaultWorkingDirectory)/processor-workflow$(Build.BuildId).zip"
 
-- task: AzureFunctionApp@1
-  displayName: 'Azure Function processor workflow Deploy '
-  inputs:
-    azureSubscription: 'AZR-MMO-SND1'
-    appType: functionApp
-    appName: ${{ parameters.logicappsprocessorName }}
-    package: '$(System.DefaultWorkingDirectory)/processor-workflow$(Build.BuildId).zip'
-    deploymentMethod: zipDeploy
+  - task: AzureFunctionApp@1
+    displayName: "Azure Function processor workflow Deploy "
+    inputs:
+      azureSubscription: "AZR-MMO-SND1"
+      appType: functionApp
+      appName: ${{ parameters.logicappsprocessorName }}
+      package: "$(System.DefaultWorkingDirectory)/processor-workflow$(Build.BuildId).zip"
+      deploymentMethod: zipDeploy
