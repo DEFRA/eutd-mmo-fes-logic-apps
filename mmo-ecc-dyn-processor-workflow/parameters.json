@@ -1,18 +1,10 @@
 {
   "HostUrl": {
     "type": "String",
-    "value": "https://org4a4f0d20.crm4.dynamics.com/"
+    "value": "@appsetting('ORG_NAME')" 
   },
-  "SNDMMOINFRG1402-API-CONNECTION-std-RuntimeUrl": {
+  "BlobStorage": {
     "type": "String",
-    "value": "@appsetting('SNDMMOINFRG1401-api-connection-std-RuntimeUrl')"
-  },
-  "SNDMMOINFRG1402-API-CONNECTION-std-Auth": {
-    "type": "Object",
-    "value": {
-      "scheme": "Key",
-      "parameter": "@appsetting('SNDMMOINFRG1401-api-connection-std-RawAuthKey')",
-      "type": "Raw"
-    }
+    "value": "@appsetting('STORAGEACCOUNT_URL')" 
   }
 }

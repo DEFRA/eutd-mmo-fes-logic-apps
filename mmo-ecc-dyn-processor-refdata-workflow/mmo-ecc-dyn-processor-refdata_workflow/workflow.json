@@ -33,7 +33,7 @@
                         }
                     },
                     "method": "get",
-                    "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('https://org4a4f0d20.crm4.dynamics.com/'))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_casetypes'))}/items"
+                    "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_casetypes'))}/items"
                 }
             },
             "Get_Devolved_Administrations": {
@@ -51,7 +51,7 @@
                         }
                     },
                     "method": "get",
-                    "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('https://org4a4f0d20.crm4.dynamics.com/'))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_devolvedadministrations'))}/items"
+                    "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_devolvedadministrations'))}/items"
                 }
             },
             "Get_Landing_Statuses": {
@@ -69,7 +69,7 @@
                         }
                     },
                     "method": "get",
-                    "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('https://org4a4f0d20.crm4.dynamics.com/'))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_validationstatuses'))}/items"
+                    "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_validationstatuses'))}/items"
                 }
             },
             "Get_Presentations": {
@@ -87,7 +87,7 @@
                         }
                     },
                     "method": "get",
-                    "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('https://org4a4f0d20.crm4.dynamics.com/'))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_presentations'))}/items"
+                    "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_presentations'))}/items"
                 }
             },
             "Get_Species": {
@@ -105,7 +105,7 @@
                         }
                     },
                     "method": "get",
-                    "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('https://org4a4f0d20.crm4.dynamics.com/'))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_species'))}/items"
+                    "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_species'))}/items"
                 },
                 "runtimeConfiguration": {
                     "paginationPolicy": {
@@ -128,7 +128,7 @@
                         }
                     },
                     "method": "get",
-                    "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('https://org4a4f0d20.crm4.dynamics.com/'))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_states'))}/items"
+                    "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_states'))}/items"
                 }
             },
             "Insert_Case_Types_into_DB": {
@@ -150,7 +150,7 @@
                                 "x-ms-version": "2019-07-07"
                             },
                             "method": "PUT",
-                            "uri": "https://sndmmoinfst1405.table.core.windows.net/mmorefdata(PartitionKey='CaseType',RowKey='@{encodeURIComponent(items('Insert_Case_Types_into_DB')?['mmofe_name'])}')"
+                            "uri": "@{parameters('BlobStorage')}/mmorefdata(PartitionKey='CaseType',RowKey='@{encodeURIComponent(items('Insert_Case_Types_into_DB')?['mmofe_name'])}')"
                         }
                     }
                 },
@@ -180,7 +180,7 @@
                                 "x-ms-version": "2019-07-07"
                             },
                             "method": "PUT",
-                            "uri": "https://sndmmoinfst1405.table.core.windows.net/mmorefdata(PartitionKey='DevolvedAdministrations',RowKey='@{encodeURIComponent(items('Insert_Devolved_Administrations_into_DB')?['mmofe_name'])}')"
+                            "uri": "@{parameters('BlobStorage')}/mmorefdata(PartitionKey='DevolvedAdministrations',RowKey='@{encodeURIComponent(items('Insert_Devolved_Administrations_into_DB')?['mmofe_name'])}')"
                         }
                     }
                 },
@@ -210,7 +210,7 @@
                                 "x-ms-version": "2019-07-07"
                             },
                             "method": "PUT",
-                            "uri": "https://sndmmoinfst1405.table.core.windows.net/mmorefdata(PartitionKey='LandingStatus',RowKey='@{encodeURIComponent(items('Insert_Landing_Statuses_into_DB')?['mmofe_name'])}')"
+                            "uri": "@{parameters('BlobStorage')}/mmorefdata(PartitionKey='LandingStatus',RowKey='@{encodeURIComponent(items('Insert_Landing_Statuses_into_DB')?['mmofe_name'])}')"
                         }
                     }
                 },
@@ -240,7 +240,7 @@
                                 "x-ms-version": "2019-07-07"
                             },
                             "method": "PUT",
-                            "uri": "https://sndmmoinfst1405.table.core.windows.net/mmorefdata(PartitionKey='Presentation',RowKey='@{encodeURIComponent(items('Insert_Presentations_into_DB')?['mmofe_name'])}')"
+                            "uri": "@{parameters('BlobStorage')}/mmorefdata(PartitionKey='Presentation',RowKey='@{encodeURIComponent(items('Insert_Presentations_into_DB')?['mmofe_name'])}')"
                         }
                     }
                 },
@@ -270,7 +270,7 @@
                                 "x-ms-version": "2019-07-07"
                             },
                             "method": "PUT",
-                            "uri": "https://sndmmoinfst1405.table.core.windows.net/mmorefdata(PartitionKey='Species',RowKey='@{encodeURIComponent(items('Insert_Species_into_DB')?['mmofe_name'])}')"
+                            "uri": "@{parameters('BlobStorage')}/mmorefdata(PartitionKey='Species',RowKey='@{encodeURIComponent(items('Insert_Species_into_DB')?['mmofe_name'])}')"
                         }
                     }
                 },
@@ -305,7 +305,7 @@
                                 "x-ms-version": "2019-07-07"
                             },
                             "method": "PUT",
-                            "uri": "https://sndmmoinfst1405.table.core.windows.net/mmorefdata(PartitionKey='State',RowKey='@{encodeURIComponent(items('Insert_States_into_DB')?['mmofe_name'])}')"
+                            "uri": "@{parameters('BlobStorage')}/mmorefdata(PartitionKey='State',RowKey='@{encodeURIComponent(items('Insert_States_into_DB')?['mmofe_name'])}')"
                         }
                     }
                 },

@@ -4,6 +4,14 @@ trigger:
       - "main"
 
 parameters:
+  - name: Deploy
+    displayName: "Select Deployment Environment"
+    type: string
+    default: None
+    values:
+      - SND1
+      - TST
+      - PREMO
   - name: resourceGroupName
     displayName: "Resource Group Name"
     type: string
@@ -17,7 +25,7 @@ parameters:
     type: string
     default: "SNDMMOSERVICEBUS-API-CONNECTION-01"
   - name: logicappsrefdataName
-    displayName: "Logicapps refdataName"
+    displayName: "Logicapps refdata Name"
     type: string
     default: "SNDMMOREFDATALA1401"
   - name: logicappsprocessorName
@@ -46,6 +54,15 @@ parameters:
     displayName: "storage account connection string"
     type: string
     default: "AzureWebJobsStorage"
+  
+variables:
+  # logic apps Infra Subscription
+  ${{ if eq(parameters.Deploy, 'SND1') }}:
+    subscription: AZR-MMO-SND1
+  ${{ if eq(parameters.Deploy, 'TST') }}:
+    subscription: AZR-MMO-TST 
+  ${{ if eq(parameters.Deploy, 'PREMO') }}:
+    subscription: AZR-MMO-PREMO 
 
 pool:
   name: DEFRA-COMMON-ubuntu2204-SSV5
@@ -54,7 +71,7 @@ steps:
   - task: AzureCLI@2
     displayName: "Update App Settings copy"
     inputs:
-      azureSubscription: "AZR-MMO-SND1"
+      azureSubscription: "$(subscription)"
       scriptType: pscore
       scriptPath: scripts/UpdateAppSettings.ps1
       arguments: >
@@ -79,7 +96,7 @@ steps:
   - task: AzureFunctionApp@1
     displayName: "Azure Function refdata workflow Deploy"
     inputs:
-      azureSubscription: "AZR-MMO-SND1"
+      azureSubscription: "$(subscription)"
       appType: functionApp
       appName: ${{ parameters.logicappsrefdataName }}
       package: "$(System.DefaultWorkingDirectory)/refdata-workflow$(Build.BuildId).zip"
@@ -95,7 +112,7 @@ steps:
   - task: AzureFunctionApp@1
     displayName: "Azure Function processor workflow Deploy "
     inputs:
-      azureSubscription: "AZR-MMO-SND1"
+      azureSubscription: "$(subscription)"
       appType: functionApp
       appName: ${{ parameters.logicappsprocessorName }}
       package: "$(System.DefaultWorkingDirectory)/processor-workflow$(Build.BuildId).zip"
