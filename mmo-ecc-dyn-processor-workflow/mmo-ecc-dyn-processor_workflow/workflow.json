@@ -1422,380 +1422,417 @@
                                                     }
                                                 ]
                                             },
-                                            "actions": {
-                                                "Check_Case_Length": {
-                                                    "type": "If",
-                                                    "expression": {
-                                                        "and": [
-                                                            {
-                                                                "equals": [
-                                                                    "@length(body('Get_Case')?['value'])",
-                                                                    0
-                                                                ]
-                                                            }
+                                          "actions": {
+                                            "Check_Case_Length": {
+                                              "type": "If",
+                                              "expression": {
+                                                "and": [
+                                                  {
+                                                    "equals": [
+                                                      "@length(body('Get_Case')?['value'])",
+                                                      0
+                                                    ]
+                                                  }
+                                                ]
+                                              },
+                                              "actions": {
+                                                "Check_Landing_or_Catches": {
+                                                  "type": "If",
+                                                  "expression": {
+                                                    "or": [
+                                                      {
+                                                        "greaterOrEquals": [
+                                                          "@length(variables('Landings'))",
+                                                          1
                                                         ]
-                                                    },
-                                                    "actions": {
-                                                        "Check_Landing_or_Catches": {
-                                                            "type": "If",
-                                                            "expression": {
-                                                                "or": [
-                                                                    {
-                                                                        "greaterOrEquals": [
-                                                                            "@length(variables('Landings'))",
-                                                                            1
-                                                                        ]
-                                                                    },
-                                                                    {
-                                                                        "greaterOrEquals": [
-                                                                            "@length(variables('CatchesProductsArray'))",
-                                                                            1
-                                                                        ]
-                                                                    }
-                                                                ]
-                                                            },
-                                                            "actions": {
-                                                                "Create_Case_3": {
-                                                                    "type": "ApiConnection",
-                                                                    "inputs": {
-                                                                        "host": {
-                                                                            "connection": {
-                                                                                "referenceName": "commondataservice"
-                                                                            }
-                                                                        },
-                                                                        "method": "post",
-                                                                        "body": {
-                                                                            "title": "@variables('DocumentNumber')",
-                                                                            "_mmofe_casetype1_value": "@variables('CaseTypeId')",
-                                                                            "_mmofe_casetype2_value": "@{if(greater(length(variables('CaseTypeId2')),0),variables('CaseTypeId2'),null)}",
-                                                                            "_mmofe_documentid_value": "@variables('DocumentId')",
-                                                                            "_customerid_value": "@variables('CustomerId')",
-                                                                            "_customerid_type": "@variables('CustomerIdType')",
-                                                                            "mmofe_approvalconfirmed": false,
-                                                                            "mmofe_approvaltoproceed": false,
-                                                                            "mmofe_caseriskatsubmission": "@if(contains(variables('Payload'), 'caseRiskAtSubmission'), variables('Payload')['caseRiskAtSubmission'], null)",
-                                                                            "mmofe_casetoberesolved": false,
-                                                                            "mmofe_ccdirectlanding": "@if(contains(variables('Payload'), 'isDirectLanding'), variables('Payload')['isDirectLanding'], false)",
-                                                                            "mmofe_companyname": "@{if(contains(variables('Exporter'),'companyName'), variables('Exporter')['companyName'],'')}",
-                                                                            "mmofe_correlationid": "@variables('CorrelationId')",
-                                                                            "mmofe_documentnumber": "@variables('DocumentNumber')",
-                                                                            "mmofe_exportdestinationcountry": "@{if(contains(variables('Payload'), 'exportedTo'), if(contains(variables('Payload')['exportedTo'], 'officialCountryName'), variables('Payload')['exportedTo']['officialCountryName'], null), null)}",
-                                                                            "mmofe_failureirrespectiveofrisk": "@if(contains(variables('Payload'), 'failureIrrespectiveOfRisk'), variables('Payload')['failureIrrespectiveOfRisk'], false)",
-                                                                            "mmofe_integrationpayload": "@{variables('Payload')}",
-                                                                            "mmofe_iteration": "@variables('Iteration')",
-                                                                            "mmofe_landingscloned": "@if(contains(variables('Payload'), 'landingsCloned'), variables('Payload')['landingsCloned'], null)",
-                                                                            "mmofe_numberoffailedsubmissions": "@variables('NumberOfFailedSubmissions')",
-                                                                            "mmofe_documentvoid": "@if(contains(variables('Payload'), 'parentDocumentVoid'), variables('Payload')['parentDocumentVoid'], null)",
-                                                                            "mmofe_daylimitreached": false,
-                                                                            "mmofe_speciesmanuallyoverridden": "@if(contains(variables('Payload'), 'speciesOverriddenByAdmin'), variables('Payload')['speciesOverriddenByAdmin'], false)",
-                                                                            "mmofe_caseoutcomeatsubmission": "@if(contains(variables('Payload'), 'caseOutcomeAtSubmission'), if(contains(variables('Payload')['caseOutcomeAtSubmission'], 'Issued'), 961040000, if(contains(variables('Payload')['caseOutcomeAtSubmission'], 'Rejected'), 961040001, 1)), null)",
-                                                                            "mmofe_totalnooflandings": "@length(variables('Landings'))",
-                                                                            "mmofe_unblocked": "@if(contains(variables('Payload'), 'isUnblocked'), variables('Payload')['isUnblocked'], false)",
-                                                                            "mmofe_unblockedaudit": "@{if(contains(variables('Payload'), 'audits'), variables('Payload')['audits'], null)}",
-                                                                            "mmofe_vesselmanuallyoverridden": "@if(contains(variables('Payload'), 'vesselOverriddenByAdmin'), variables('Payload')['vesselOverriddenByAdmin'], false)",
-                                                                            "_mmofe_clonedfrom_value": "@variables('CloneDocId')",
-                                                                            "_mmofe_devolvedadministrationid_value": "@variables('DevolvedAdministrationId')",
-                                                                            "_mmofe_casestatusatsubmission_value": "@{if(greater(length(variables('CaseStatusAtSubmission')),0),variables('CaseStatusAtSubmission'),null)}"
-                                                                        },
-                                                                        "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('incidents'))}/items"
-                                                                    }
-                                                                },
-                                                                "Set_Case_Id_3": {
-                                                                    "type": "SetVariable",
-                                                                    "inputs": {
-                                                                        "name": "CaseId",
-                                                                        "value": "@body('Create_Case_3')?['incidentid']"
-                                                                    },
-                                                                    "runAfter": {
-                                                                        "Create_Case_3": [
-                                                                            "Succeeded",
-                                                                            "Failed"
-                                                                        ]
-                                                                    }
-                                                                }
-                                                            },
-                                                            "else": {
-                                                                "actions": {}
-                                                            }
-                                                        }
-                                                    },
-                                                    "else": {
-                                                        "actions": {
-                                                            "For_each_6": {
-                                                                "type": "Foreach",
-                                                                "foreach": "@body('Get_Case')?['value']",
-                                                                "actions": {
-                                                                    "Check_Case_Type_2": {
-                                                                        "type": "If",
-                                                                        "expression": {
-                                                                            "and": [
-                                                                                {
-                                                                                    "equals": [
-                                                                                        "@items('For_each_6')?['mmofe_caseoutcomeatsubmission']",
-                                                                                        961040001
-                                                                                    ]
-                                                                                },
-                                                                                {
-                                                                                    "contains": [
-                                                                                        "@variables('Payload')",
-                                                                                        "documentNumber"
-                                                                                    ]
-                                                                                }
-                                                                            ]
-                                                                        },
-                                                                        "actions": {
-                                                                            "Create_Case_2": {
-                                                                                "type": "ApiConnection",
-                                                                                "inputs": {
-                                                                                    "host": {
-                                                                                        "connection": {
-                                                                                            "referenceName": "commondataservice"
-                                                                                        }
-                                                                                    },
-                                                                                    "method": "post",
-                                                                                    "body": {
-                                                                                        "title": "@variables('DocumentNumber')",
-                                                                                        "_mmofe_casetype1_value": "@variables('CaseTypeId')",
-                                                                                        "_mmofe_casetype2_value": "@{if(greater(length(variables('CaseTypeId2')),0),variables('CaseTypeId2'),null)}",
-                                                                                        "_mmofe_documentid_value": "@variables('DocumentId')",
-                                                                                        "_customerid_value": "@variables('CustomerId')",
-                                                                                        "_customerid_type": "@variables('CustomerIdType')",
-                                                                                        "mmofe_approvalconfirmed": false,
-                                                                                        "mmofe_approvaltoproceed": false,
-                                                                                        "mmofe_caseriskatsubmission": "@if(contains(variables('Payload'), 'caseRiskAtSubmission'), variables('Payload')['caseRiskAtSubmission'], null)",
-                                                                                        "mmofe_casetoberesolved": false,
-                                                                                        "mmofe_ccdirectlanding": "@if(contains(variables('Payload'), 'isDirectLanding'), variables('Payload')['isDirectLanding'], false)",
-                                                                                        "mmofe_companyname": "@{if(contains(variables('Exporter'),'companyName'), variables('Exporter')['companyName'],'')}",
-                                                                                        "mmofe_correlationid": "@variables('CorrelationId')",
-                                                                                        "mmofe_documentnumber": "@variables('DocumentNumber')",
-                                                                                        "mmofe_exportdestinationcountry": "@{if(contains(variables('Payload'), 'exportedTo'), if(contains(variables('Payload')['exportedTo'], 'officialCountryName'), variables('Payload')['exportedTo']['officialCountryName'], null), null)}",
-                                                                                        "mmofe_failureirrespectiveofrisk": "@if(contains(variables('Payload'), 'failureIrrespectiveOfRisk'), variables('Payload')['failureIrrespectiveOfRisk'], false)",
-                                                                                        "mmofe_integrationpayload": "@{variables('Payload')}",
-                                                                                        "mmofe_iteration": "@variables('Iteration')",
-                                                                                        "mmofe_landingscloned": "@if(contains(variables('Payload'), 'landingsCloned'), variables('Payload')['landingsCloned'], null)",
-                                                                                        "mmofe_numberoffailedsubmissions": "@variables('NumberOfFailedSubmissions')",
-                                                                                        "mmofe_documentvoid": "@if(contains(variables('Payload'), 'parentDocumentVoid'), variables('Payload')['parentDocumentVoid'], null)",
-                                                                                        "mmofe_daylimitreached": false,
-                                                                                        "mmofe_speciesmanuallyoverridden": "@if(contains(variables('Payload'), 'speciesOverriddenByAdmin'), variables('Payload')['speciesOverriddenByAdmin'], false)",
-                                                                                        "mmofe_caseoutcomeatsubmission": "@if(contains(variables('Payload'), 'caseOutcomeAtSubmission'), if(contains(variables('Payload')['caseOutcomeAtSubmission'], 'Issued'), 961040000, if(contains(variables('Payload')['caseOutcomeAtSubmission'], 'Rejected'), 961040001, 1)), null)",
-                                                                                        "mmofe_totalnooflandings": "@length(variables('Landings'))",
-                                                                                        "mmofe_unblocked": "@if(contains(variables('Payload'), 'isUnblocked'), variables('Payload')['isUnblocked'], false)",
-                                                                                        "mmofe_unblockedaudit": "@{if(contains(variables('Payload'), 'audits'), variables('Payload')['audits'], null)}",
-                                                                                        "mmofe_vesselmanuallyoverridden": "@if(contains(variables('Payload'), 'vesselOverriddenByAdmin'), variables('Payload')['vesselOverriddenByAdmin'], false)",
-                                                                                        "_mmofe_clonedfrom_value": "@variables('CloneDocId')",
-                                                                                        "_mmofe_devolvedadministrationid_value": "@variables('DevolvedAdministrationId')",
-                                                                                        "_mmofe_casestatusatsubmission_value": "@{if(greater(length(variables('CaseStatusAtSubmission')),0),variables('CaseStatusAtSubmission'),null)}"
-                                                                                    },
-                                                                                    "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('incidents'))}/items"
-                                                                                }
-                                                                            },
-                                                                            "Set_Case_Id_2": {
-                                                                                "type": "SetVariable",
-                                                                                "inputs": {
-                                                                                    "name": "CaseId",
-                                                                                    "value": "@body('Create_Case_2')?['incidentid']"
-                                                                                },
-                                                                                "runAfter": {
-                                                                                    "Create_Case_2": [
-                                                                                        "Succeeded"
-                                                                                    ]
-                                                                                }
-                                                                            }
-                                                                        },
-                                                                        "else": {
-                                                                            "actions": {
-                                                                                "CaseId": {
-                                                                                    "type": "SetVariable",
-                                                                                    "inputs": {
-                                                                                        "name": "CaseId",
-                                                                                        "value": "@items('For_each_6')?['incidentid']"
-                                                                                    }
-                                                                                }
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                    },
-                                                    "runAfter": {
-                                                        "Get_Case": [
-                                                            "Succeeded"
+                                                      },
+                                                      {
+                                                        "greaterOrEquals": [
+                                                          "@length(variables('CatchesProductsArray'))",
+                                                          1
                                                         ]
-                                                    }
-                                                },
-                                                "List_records_12": {
-                                                    "type": "ApiConnection",
-                                                    "inputs": {
+                                                      }
+                                                    ]
+                                                  },
+                                                  "actions": {
+                                                    "Create_Case_3": {
+                                                      "type": "ApiConnection",
+                                                      "inputs": {
                                                         "host": {
-                                                            "connection": {
-                                                                "referenceName": "commondataservice"
-                                                            }
+                                                          "connection": {
+                                                            "referenceName": "commondataservice"
+                                                          }
                                                         },
-                                                        "method": "get",
-                                                        "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_landingses'))}/items",
-                                                        "queries": {
-                                                            "$filter": "_mmofe_documentid_value eq '@{variables('DocumentId')}'"
-                                                        }
-                                                    },
-                                                    "runAfter": {
-                                                        "Check_Case_Length": [
-                                                            "Succeeded"
-                                                        ]
-                                                    }
-                                                },
-                                                "If_journey_is_CC": {
-                                                    "type": "If",
-                                                    "expression": {
-                                                        "and": [
-                                                            {
-                                                                "greater": [
-                                                                    "@length(body('List_records_12')?['value'])",
-                                                                    0
-                                                                ]
-                                                            }
-                                                        ]
-                                                    },
-                                                    "actions": {
-                                                        "For_each_5": {
-                                                            "type": "Foreach",
-                                                            "foreach": "@body('List_records_12')?['value']",
-                                                            "actions": {
-                                                                "Scope_2": {
-                                                                    "type": "Scope",
-                                                                    "actions": {
-                                                                        "Condition_10": {
-                                                                            "type": "If",
-                                                                            "expression": {
-                                                                                "and": [
-                                                                                    {
-                                                                                        "greater": [
-                                                                                            "@length(body('List_records_12')?['value'])",
-                                                                                            "@variables('Voided Landing Index')"
-                                                                                        ]
-                                                                                    }
-                                                                                ]
-                                                                            },
-                                                                            "actions": {
-                                                                                "Increment_variable": {
-                                                                                    "type": "IncrementVariable",
-                                                                                    "inputs": {
-                                                                                        "name": "Voided Landing Index",
-                                                                                        "value": 1
-                                                                                    }
-                                                                                }
-                                                                            },
-                                                                            "else": {
-                                                                                "actions": {}
-                                                                            },
-                                                                            "runAfter": {
-                                                                                "Update_a_Landing_record": [
-                                                                                    "Succeeded"
-                                                                                ]
-                                                                            }
-                                                                        },
-                                                                        "UpdateLandingId2": {
-                                                                            "type": "Compose",
-                                                                            "inputs": "@body('List_records_12')?['value'][variables('Voided Landing Index')]['mmofe_landingsid']"
-                                                                        },
-                                                                        "Update_a_Landing_record": {
-                                                                            "type": "ApiConnection",
-                                                                            "inputs": {
-                                                                                "host": {
-                                                                                    "connection": {
-                                                                                        "referenceName": "commondataservice"
-                                                                                    }
-                                                                                },
-                                                                                "method": "patch",
-                                                                                "body": {
-                                                                                    "mmofe_daylimitreached": "True",
-                                                                                    "statuscode": "@if(contains(variables('Payload'), 'caseType2'), if(contains(variables('Payload')['caseType2'], 'Void by an Exporter'), 961040000, if(contains(variables('Payload')['caseType2'], 'Void by SMO/PMO'), 961040001, 1)), outputs('Status_Reason'))"
-                                                                                },
-                                                                                "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_landingses'))}/items/@{encodeURIComponent(encodeURIComponent(outputs('UpdateLandingId2')))}"
-                                                                            },
-                                                                            "runAfter": {
-                                                                                "UpdateLandingId2": [
-                                                                                    "Succeeded"
-                                                                                ]
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                    },
-                                                    "else": {
-                                                        "actions": {}
-                                                    },
-                                                    "runAfter": {
-                                                        "List_records_12": [
-                                                            "Succeeded"
-                                                        ]
-                                                    }
-                                                },
-                                                "Get_Case": {
-                                                    "type": "ApiConnection",
-                                                    "inputs": {
-                                                        "host": {
-                                                            "connection": {
-                                                                "referenceName": "commondataservice"
-                                                            }
-                                                        },
-                                                        "method": "get",
-                                                        "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('incidents'))}/items",
-                                                        "queries": {
-                                                            "$filter": "_mmofe_documentid_value eq '@{variables('DocumentId')}'",
-                                                            "$orderby": "createdon desc",
-                                                            "$top": 1
-                                                        }
-                                                    },
-                                                    "runAfter": {
-                                                        "Update_a_record_2": [
-                                                            "Succeeded",
-                                                            "Failed"
-                                                        ]
-                                                    }
-                                                },
-                                                "Set_variable_6": {
-                                                    "type": "SetVariable",
-                                                    "inputs": {
-                                                        "name": "DocumentId",
-                                                        "value": "@items('For_each_7')?['mmofe_documentid']"
-                                                    }
-                                                },
-                                                "Status_Reason": {
-                                                    "type": "Compose",
-                                                    "inputs": "@body('List_records_3')?['value'][0]['statuscode']",
-                                                    "runAfter": {
-                                                        "Set_variable_6": [
-                                                            "Succeeded"
-                                                        ]
-                                                    }
-                                                },
-                                                "Update_a_record_2": {
-                                                    "type": "ApiConnection",
-                                                    "inputs": {
-                                                        "host": {
-                                                            "connection": {
-                                                                "referenceName": "commondataservice"
-                                                            }
-                                                        },
-                                                        "method": "patch",
+                                                        "method": "post",
                                                         "body": {
-                                                            "mmofe_documenturl": "@{if(equals(variables('DocumentUrl'),''),body('List_records_3')?['value'][0]['mmofe_documenturl'],variables('DocumentUrl'))}",
-                                                            "mmofe_integrationpayload": "@{string(variables('Payload'))}",
-                                                            "statuscode": "@if(contains(variables('Payload'), 'caseType2'), if(contains(variables('Payload')['caseType2'], 'Void by an Exporter'), 961040000, if(contains(variables('Payload')['caseType2'], 'Void by SMO/PMO'), 961040001, 1)), outputs('Status_Reason'))",
-                                                            "_ownerid_type": ""
+                                                          "title": "@variables('DocumentNumber')",
+                                                          "_mmofe_casetype1_value": "@variables('CaseTypeId')",
+                                                          "_mmofe_casetype2_value": "@{if(greater(length(variables('CaseTypeId2')),0),variables('CaseTypeId2'),null)}",
+                                                          "_mmofe_documentid_value": "@variables('DocumentId')",
+                                                          "_customerid_value": "@variables('CustomerId')",
+                                                          "_customerid_type": "@variables('CustomerIdType')",
+                                                          "mmofe_approvalconfirmed": false,
+                                                          "mmofe_approvaltoproceed": false,
+                                                          "mmofe_caseriskatsubmission": "@if(contains(variables('Payload'), 'caseRiskAtSubmission'), variables('Payload')['caseRiskAtSubmission'], null)",
+                                                          "mmofe_casetoberesolved": false,
+                                                          "mmofe_ccdirectlanding": "@if(contains(variables('Payload'), 'isDirectLanding'), variables('Payload')['isDirectLanding'], false)",
+                                                          "mmofe_companyname": "@{if(contains(variables('Exporter'),'companyName'), variables('Exporter')['companyName'],'')}",
+                                                          "mmofe_correlationid": "@variables('CorrelationId')",
+                                                          "mmofe_documentnumber": "@variables('DocumentNumber')",
+                                                          "mmofe_exportdestinationcountry": "@{if(contains(variables('Payload'), 'exportedTo'), if(contains(variables('Payload')['exportedTo'], 'officialCountryName'), variables('Payload')['exportedTo']['officialCountryName'], null), null)}",
+                                                          "mmofe_failureirrespectiveofrisk": "@if(contains(variables('Payload'), 'failureIrrespectiveOfRisk'), variables('Payload')['failureIrrespectiveOfRisk'], false)",
+                                                          "mmofe_integrationpayload": "@{variables('Payload')}",
+                                                          "mmofe_iteration": "@variables('Iteration')",
+                                                          "mmofe_landingscloned": "@if(contains(variables('Payload'), 'landingsCloned'), variables('Payload')['landingsCloned'], null)",
+                                                          "mmofe_numberoffailedsubmissions": "@variables('NumberOfFailedSubmissions')",
+                                                          "mmofe_documentvoid": "@if(contains(variables('Payload'), 'parentDocumentVoid'), variables('Payload')['parentDocumentVoid'], null)",
+                                                          "mmofe_daylimitreached": false,
+                                                          "mmofe_speciesmanuallyoverridden": "@if(contains(variables('Payload'), 'speciesOverriddenByAdmin'), variables('Payload')['speciesOverriddenByAdmin'], false)",
+                                                          "mmofe_caseoutcomeatsubmission": "@if(contains(variables('Payload'), 'caseOutcomeAtSubmission'), if(contains(variables('Payload')['caseOutcomeAtSubmission'], 'Issued'), 961040000, if(contains(variables('Payload')['caseOutcomeAtSubmission'], 'Rejected'), 961040001, 1)), null)",
+                                                          "mmofe_totalnooflandings": "@length(variables('Landings'))",
+                                                          "mmofe_unblocked": "@if(contains(variables('Payload'), 'isUnblocked'), variables('Payload')['isUnblocked'], false)",
+                                                          "mmofe_unblockedaudit": "@{if(contains(variables('Payload'), 'audits'), variables('Payload')['audits'], null)}",
+                                                          "mmofe_vesselmanuallyoverridden": "@if(contains(variables('Payload'), 'vesselOverriddenByAdmin'), variables('Payload')['vesselOverriddenByAdmin'], false)",
+                                                          "_mmofe_clonedfrom_value": "@variables('CloneDocId')",
+                                                          "_mmofe_devolvedadministrationid_value": "@variables('DevolvedAdministrationId')",
+                                                          "_mmofe_casestatusatsubmission_value": "@{if(greater(length(variables('CaseStatusAtSubmission')),0),variables('CaseStatusAtSubmission'),null)}"
                                                         },
-                                                        "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_documents'))}/items/@{encodeURIComponent(encodeURIComponent(items('For_each_7')?['mmofe_documentid']))}"
+                                                        "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('incidents'))}/items"
+                                                      }
                                                     },
-                                                    "runAfter": {
-                                                        "Status_Reason": [
-                                                            "Succeeded"
+                                                    "Set_Case_Id_3": {
+                                                      "type": "SetVariable",
+                                                      "inputs": {
+                                                        "name": "CaseId",
+                                                        "value": "@body('Create_Case_3')?['incidentid']"
+                                                      },
+                                                      "runAfter": {
+                                                        "Create_Case_3": [
+                                                          "Succeeded",
+                                                          "Failed"
                                                         ]
+                                                      }
                                                     }
+                                                  },
+                                                  "else": {
+                                                    "actions": {}
+                                                  }
                                                 }
+                                              },
+                                              "else": {
+                                                "actions": {
+                                                  "For_each_6": {
+                                                    "type": "Foreach",
+                                                    "foreach": "@body('Get_Case')?['value']",
+                                                    "actions": {
+                                                      "Check_Case_Type_2": {
+                                                        "type": "If",
+                                                        "expression": {
+                                                          "and": [
+                                                            {
+                                                              "equals": [
+                                                                "@items('For_each_6')?['mmofe_caseoutcomeatsubmission']",
+                                                                961040001
+                                                              ]
+                                                            },
+                                                            {
+                                                              "contains": [
+                                                                "@variables('Payload')",
+                                                                "documentNumber"
+                                                              ]
+                                                            }
+                                                          ]
+                                                        },
+                                                        "actions": {
+                                                          "Create_Case_2": {
+                                                            "type": "ApiConnection",
+                                                            "inputs": {
+                                                              "host": {
+                                                                "connection": {
+                                                                  "referenceName": "commondataservice"
+                                                                }
+                                                              },
+                                                              "method": "post",
+                                                              "body": {
+                                                                "title": "@variables('DocumentNumber')",
+                                                                "_mmofe_casetype1_value": "@variables('CaseTypeId')",
+                                                                "_mmofe_casetype2_value": "@{if(greater(length(variables('CaseTypeId2')),0),variables('CaseTypeId2'),null)}",
+                                                                "_mmofe_documentid_value": "@variables('DocumentId')",
+                                                                "_customerid_value": "@variables('CustomerId')",
+                                                                "_customerid_type": "@variables('CustomerIdType')",
+                                                                "mmofe_approvalconfirmed": false,
+                                                                "mmofe_approvaltoproceed": false,
+                                                                "mmofe_caseriskatsubmission": "@if(contains(variables('Payload'), 'caseRiskAtSubmission'), variables('Payload')['caseRiskAtSubmission'], null)",
+                                                                "mmofe_casetoberesolved": false,
+                                                                "mmofe_ccdirectlanding": "@if(contains(variables('Payload'), 'isDirectLanding'), variables('Payload')['isDirectLanding'], false)",
+                                                                "mmofe_companyname": "@{if(contains(variables('Exporter'),'companyName'), variables('Exporter')['companyName'],'')}",
+                                                                "mmofe_correlationid": "@variables('CorrelationId')",
+                                                                "mmofe_documentnumber": "@variables('DocumentNumber')",
+                                                                "mmofe_exportdestinationcountry": "@{if(contains(variables('Payload'), 'exportedTo'), if(contains(variables('Payload')['exportedTo'], 'officialCountryName'), variables('Payload')['exportedTo']['officialCountryName'], null), null)}",
+                                                                "mmofe_failureirrespectiveofrisk": "@if(contains(variables('Payload'), 'failureIrrespectiveOfRisk'), variables('Payload')['failureIrrespectiveOfRisk'], false)",
+                                                                "mmofe_integrationpayload": "@{variables('Payload')}",
+                                                                "mmofe_iteration": "@variables('Iteration')",
+                                                                "mmofe_landingscloned": "@if(contains(variables('Payload'), 'landingsCloned'), variables('Payload')['landingsCloned'], null)",
+                                                                "mmofe_numberoffailedsubmissions": "@variables('NumberOfFailedSubmissions')",
+                                                                "mmofe_documentvoid": "@if(contains(variables('Payload'), 'parentDocumentVoid'), variables('Payload')['parentDocumentVoid'], null)",
+                                                                "mmofe_daylimitreached": false,
+                                                                "mmofe_speciesmanuallyoverridden": "@if(contains(variables('Payload'), 'speciesOverriddenByAdmin'), variables('Payload')['speciesOverriddenByAdmin'], false)",
+                                                                "mmofe_caseoutcomeatsubmission": "@if(contains(variables('Payload'), 'caseOutcomeAtSubmission'), if(contains(variables('Payload')['caseOutcomeAtSubmission'], 'Issued'), 961040000, if(contains(variables('Payload')['caseOutcomeAtSubmission'], 'Rejected'), 961040001, 1)), null)",
+                                                                "mmofe_totalnooflandings": "@length(variables('Landings'))",
+                                                                "mmofe_unblocked": "@if(contains(variables('Payload'), 'isUnblocked'), variables('Payload')['isUnblocked'], false)",
+                                                                "mmofe_unblockedaudit": "@{if(contains(variables('Payload'), 'audits'), variables('Payload')['audits'], null)}",
+                                                                "mmofe_vesselmanuallyoverridden": "@if(contains(variables('Payload'), 'vesselOverriddenByAdmin'), variables('Payload')['vesselOverriddenByAdmin'], false)",
+                                                                "_mmofe_clonedfrom_value": "@variables('CloneDocId')",
+                                                                "_mmofe_devolvedadministrationid_value": "@variables('DevolvedAdministrationId')",
+                                                                "_mmofe_casestatusatsubmission_value": "@{if(greater(length(variables('CaseStatusAtSubmission')),0),variables('CaseStatusAtSubmission'),null)}"
+                                                              },
+                                                              "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('incidents'))}/items"
+                                                            }
+                                                          },
+                                                          "Set_Case_Id_2": {
+                                                            "type": "SetVariable",
+                                                            "inputs": {
+                                                              "name": "CaseId",
+                                                              "value": "@body('Create_Case_2')?['incidentid']"
+                                                            },
+                                                            "runAfter": {
+                                                              "Create_Case_2": [
+                                                                "Succeeded"
+                                                              ]
+                                                            }
+                                                          }
+                                                        },
+                                                        "else": {
+                                                          "actions": {
+                                                            "CaseId": {
+                                                              "type": "SetVariable",
+                                                              "inputs": {
+                                                                "name": "CaseId",
+                                                                "value": "@items('For_each_6')?['incidentid']"
+                                                              }
+                                                            }
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              },
+                                              "runAfter": {
+                                                "Get_Case": [
+                                                  "Succeeded"
+                                                ]
+                                              }
                                             },
+                                            "List_records_12": {
+                                              "type": "ApiConnection",
+                                              "inputs": {
+                                                "host": {
+                                                  "connection": {
+                                                    "referenceName": "commondataservice"
+                                                  }
+                                                },
+                                                "method": "get",
+                                                "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_landingses'))}/items",
+                                                "queries": {
+                                                  "$filter": "_mmofe_documentid_value eq '@{variables('DocumentId')}'"
+                                                }
+                                              },
+                                              "runAfter": {
+                                                "Check_Case_Length": [
+                                                  "Succeeded"
+                                                ]
+                                              }
+                                            },
+                                            "List_records_13": {
+                                              "runAfter": {
+                                                "List_records_12": [
+                                                  "Succeeded"
+                                                ]
+                                              },
+                                              "type": "ApiConnection",
+                                              "inputs": {
+                                                "host": {
+                                                  "connection": {
+                                                    "referenceName": "commondataservice"
+                                                  }
+                                                },
+                                                "method": "get",
+                                                "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_documents'))}/items",
+                                                "queries": {
+                                                  "$filter": "mmofe_documentnumber eq '@{variables('DocumentNumber')}'",
+                                                  "$top": 1
+                                                }
+                                              }
+                                            },
+                                            "If_journey_is_CC": {
+                                              "type": "If",
+                                              "expression": {
+                                                "and": [
+                                                  {
+                                                    "greater": [
+                                                      "@length(body('List_records_12')?['value'])",
+                                                      0
+                                                    ]
+                                                  },
+                                                  {
+                                                    "or": [
+                                                      {
+                                                        "equals": [
+                                                          "@body('List_records_13')?['value'][0]['statuscode']",
+                                                          961040001
+                                                        ]
+                                                      },
+                                                      {
+                                                        "equals": [
+                                                          "@body('List_records_13')?['value'][0]['statuscode']",
+                                                          961040000
+                                                        ]
+                                                      }
+                                                    ]
+                                                  }
+                                                ]
+                                              },
+                                              "actions": {
+                                                "For_each_5": {
+                                                  "type": "Foreach",
+                                                  "foreach": "@body('List_records_12')?['value']",
+                                                  "actions": {
+                                                    "Scope_2": {
+                                                      "type": "Scope",
+                                                      "actions": {
+                                                        "Condition_10": {
+                                                          "type": "If",
+                                                          "expression": {
+                                                            "and": [
+                                                              {
+                                                                "greater": [
+                                                                  "@length(body('List_records_12')?['value'])",
+                                                                  "@variables('Voided Landing Index')"
+                                                                ]
+                                                              }
+                                                            ]
+                                                          },
+                                                          "actions": {
+                                                            "Increment_variable": {
+                                                              "type": "IncrementVariable",
+                                                              "inputs": {
+                                                                "name": "Voided Landing Index",
+                                                                "value": 1
+                                                              }
+                                                            }
+                                                          },
+                                                          "else": {
+                                                            "actions": {}
+                                                          },
+                                                          "runAfter": {
+                                                            "Update_a_Landing_record": [
+                                                              "Succeeded"
+                                                            ]
+                                                          }
+                                                        },
+                                                        "UpdateLandingId2": {
+                                                          "type": "Compose",
+                                                          "inputs": "@body('List_records_12')?['value'][variables('Voided Landing Index')]['mmofe_landingsid']"
+                                                        },
+                                                        "Update_a_Landing_record": {
+                                                          "type": "ApiConnection",
+                                                          "inputs": {
+                                                            "host": {
+                                                              "connection": {
+                                                                "referenceName": "commondataservice"
+                                                              }
+                                                            },
+                                                            "method": "patch",
+                                                            "body": {
+                                                              "mmofe_daylimitreached": "True",
+                                                              "statuscode": "@if(contains(variables('Payload'), 'caseType2'), if(contains(variables('Payload')['caseType2'], 'Void by an Exporter'), 961040000, if(contains(variables('Payload')['caseType2'], 'Void by SMO/PMO'), 961040001, 1)), outputs('Status_Reason'))"
+                                                            },
+                                                            "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_landingses'))}/items/@{encodeURIComponent(encodeURIComponent(outputs('UpdateLandingId2')))}"
+                                                          },
+                                                          "runAfter": {
+                                                            "UpdateLandingId2": [
+                                                              "Succeeded"
+                                                            ]
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              },
+                                              "else": {
+                                                "actions": {}
+                                              },
+                                              "runAfter": {
+                                                "List_records_13": [
+                                                  "Succeeded"
+                                                ]
+                                              }
+                                            },
+                                            "Get_Case": {
+                                              "type": "ApiConnection",
+                                              "inputs": {
+                                                "host": {
+                                                  "connection": {
+                                                    "referenceName": "commondataservice"
+                                                  }
+                                                },
+                                                "method": "get",
+                                                "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('incidents'))}/items",
+                                                "queries": {
+                                                  "$filter": "_mmofe_documentid_value eq '@{variables('DocumentId')}'",
+                                                  "$orderby": "createdon desc",
+                                                  "$top": 1
+                                                }
+                                              },
+                                              "runAfter": {
+                                                "Update_a_record_2": [
+                                                  "Succeeded",
+                                                  "Failed"
+                                                ]
+                                              }
+                                            },
+                                            "Set_variable_6": {
+                                              "type": "SetVariable",
+                                              "inputs": {
+                                                "name": "DocumentId",
+                                                "value": "@items('For_each_7')?['mmofe_documentid']"
+                                              }
+                                            },
+                                            "Status_Reason": {
+                                              "type": "Compose",
+                                              "inputs": "@body('List_records_3')?['value'][0]['statuscode']",
+                                              "runAfter": {
+                                                "Set_variable_6": [
+                                                  "Succeeded"
+                                                ]
+                                              }
+                                            },
+                                            "Update_a_record_2": {
+                                              "type": "ApiConnection",
+                                              "inputs": {
+                                                "host": {
+                                                  "connection": {
+                                                    "referenceName": "commondataservice"
+                                                  }
+                                                },
+                                                "method": "patch",
+                                                "body": {
+                                                  "mmofe_documenturl": "@{if(equals(variables('DocumentUrl'),''),body('List_records_3')?['value'][0]['mmofe_documenturl'],variables('DocumentUrl'))}",
+                                                  "mmofe_integrationpayload": "@{string(variables('Payload'))}",
+                                                  "statuscode": "@if(contains(variables('Payload'), 'caseType2'), if(contains(variables('Payload')['caseType2'], 'Void by an Exporter'), 961040000, if(contains(variables('Payload')['caseType2'], 'Void by SMO/PMO'), 961040001, 1)), outputs('Status_Reason'))",
+                                                  "_ownerid_type": ""
+                                                },
+                                                "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_documents'))}/items/@{encodeURIComponent(encodeURIComponent(items('For_each_7')?['mmofe_documentid']))}"
+                                              },
+                                              "runAfter": {
+                                                "Status_Reason": [
+                                                  "Succeeded"
+                                                ]
+                                              }
+                                            }
+                                          },
                                             "else": {
                                                 "actions": {
                                                     "Set_variable_17": {
