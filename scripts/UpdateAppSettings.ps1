@@ -10,18 +10,10 @@ Param(
     [string]$logicappsrefdataName,
     [Parameter(Mandatory = $true)]
     [string]$logicappsprocessorName,
-
     [Parameter(Mandatory = $true)]
     [string]$storageAccountName,
     [Parameter(Mandatory = $true)]
-    [string]$storageAccountRGName, 
-
-    [Parameter(Mandatory = $true)]
-    [string]$common_appSettingsKey,
-    [Parameter(Mandatory = $true)]
-    [string]$servicebus_appSettingsKey,
-    [Parameter(Mandatory = $true)]
-    [string]$storage_appSettingsKey
+    [string]$storageAccountRGName
 )
 
 # Fetch the API Connection runtime URL
@@ -51,13 +43,17 @@ if (-not $connectionString) {
 }
 $connectionStringFormatted = "DefaultEndpointsProtocol=https;AccountName=$storageAccountName;AccountKey=$connectionString;EndpointSuffix=core.windows.net"
 
+# Get the Table Primary Endpoint
+$tablePrimaryUrl = (az storage account show --name $storageAccountName --resource-group $storageAccountRGName --query "primaryEndpoints.table" --output tsv)
+$tablePrimaryUrl = $tablePrimaryUrl -replace "/$",""
 
 # Validate that runtime URLs and storage connection string were fetched
-if (-not $apiConnectionRuntimeUrl -or -not $serviceBusConnectionRuntimeUrl -or -not $connectionStringFormatted) {
+if (-not $apiConnectionRuntimeUrl -or -not $serviceBusConnectionRuntimeUrl -or -not $connectionStringFormatted -or -not $tablePrimaryUrl) {
     Write-Error "Error: One or more required values are missing."
     Write-Error "API Connection URL: $apiConnectionRuntimeUrl"
     Write-Error "Service Bus URL: $serviceBusConnectionRuntimeUrl"
     Write-Error "Storage Connection String: $connectionStringFormatted"
+    Write-Error "Storage Account Primary URL: $tablePrimaryUrl"
     exit 1
 }
 
@@ -67,18 +63,20 @@ if (-not $apiConnectionRuntimeUrl -or -not $serviceBusConnectionRuntimeUrl -or -
 
 # Update App Settings in the App Services
 Write-Host "Updating App Settings for Logic App: $logicappsrefdataName..."
-az webapp config appsettings set --name $logicappsrefdataName --resource-group $resourceGroupName --settings "$common_appSettingsKey=$apiConnectionRuntimeUrl"
-az webapp config appsettings set --name $logicappsrefdataName --resource-group $resourceGroupName --settings "$servicebus_appSettingsKey=$serviceBusConnectionRuntimeUrl"
-az webapp config appsettings set --name $logicappsrefdataName --resource-group $resourceGroupName --settings "$storage_appSettingsKey=$connectionStringFormatted"
+az webapp config appsettings set --name $logicappsrefdataName --resource-group $resourceGroupName --settings "COMMON_API_CONNECTION_RUNTIME_URL=$apiConnectionRuntimeUrl"
+az webapp config appsettings set --name $logicappsrefdataName --resource-group $resourceGroupName --settings "SERVICEBUS_CONNECTION_RUNTIME_URL=$serviceBusConnectionRuntimeUrl"
+az webapp config appsettings set --name $logicappsrefdataName --resource-group $resourceGroupName --settings "AzureWebJobsStorage=$connectionStringFormatted"
+az webapp config appsettings set --name $logicappsrefdataName --resource-group $resourceGroupName --settings "STORAGEACCOUNT_URL=$tablePrimaryUrl"
 
 Write-Host "Updating App Settings for Logic App: $logicappsprocessorName..."
-az webapp config appsettings set --name $logicappsprocessorName --resource-group $resourceGroupName --settings "$common_appSettingsKey=$apiConnectionRuntimeUrl"
-az webapp config appsettings set --name $logicappsprocessorName --resource-group $resourceGroupName --settings "$servicebus_appSettingsKey=$serviceBusConnectionRuntimeUrl"
-az webapp config appsettings set --name $logicappsprocessorName --resource-group $resourceGroupName --settings "$storage_appSettingsKey=$connectionStringFormatted"
+az webapp config appsettings set --name $logicappsprocessorName --resource-group $resourceGroupName --settings "COMMON_API_CONNECTION_RUNTIME_URL=$apiConnectionRuntimeUrl"
+az webapp config appsettings set --name $logicappsprocessorName --resource-group $resourceGroupName --settings "SERVICEBUS_CONNECTION_RUNTIME_URL=$serviceBusConnectionRuntimeUrl"
+az webapp config appsettings set --name $logicappsprocessorName --resource-group $resourceGroupName --settings "AzureWebJobsStorage=$connectionStringFormatted"
+az webapp config appsettings set --name $logicappsprocessorName --resource-group $resourceGroupName --settings "STORAGEACCOUNT_URL=$tablePrimaryUrl"
 
 # Verify if the App Settings update was successful
 if ($LASTEXITCODE -eq 0) {
-    Write-Host "Successfully updated App Settings with key '$common_appSettingsKey' and '$servicebus_appSettingsKey' and '$storage_appSettingsKey' in Logic Apps."
+    Write-Host "Successfully updated App Settings with key 'COMMON_API_CONNECTION_RUNTIME_URL', 'SERVICEBUS_CONNECTION_RUNTIME_URL', 'STORAGEACCOUNT_URL' and 'AzureWebJobsStorage' in Logic Apps."
 } else {
     Write-Error "Error: Failed to update App Settings in Logic Apps."
     exit 1

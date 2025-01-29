@@ -7,11 +7,10 @@ parameters:
   - name: Deploy
     displayName: "Select Deployment Environment"
     type: string
-    default: None
+    default: 'SND'
     values:
-      - SND1
+      - SND
       - TST
-      - PREMO
   - name: resourceGroupName
     displayName: "Resource Group Name"
     type: string
@@ -39,30 +38,16 @@ parameters:
   - name: storageAccountRGName
     displayName: "Storage Account Resource Groupd Name"
     type: string
-    default: "SNDMMOINFRG1402"
-  - name: common_appSettingsKey
-    displayName: "Common API connection Runtime URL"
-    type: string
-    default: "COMMON_API_CONNECTION_RUNTIME_URL"
+    default: "SNDMMOINFRG1402" 
 
-  - name: servicebus_appSettingsKey
-    displayName: "Service Bus Connection Runtime URL"
-    type: string
-    default: "SERVICEBUS_CONNECTION_RUNTIME_URL"
-
-  - name: storage_appSettingsKey
-    displayName: "storage account connection string"
-    type: string
-    default: "AzureWebJobsStorage"
-  
 variables:
-  # logic apps Infra Subscription
-  ${{ if eq(parameters.Deploy, 'SND1') }}:
-    subscription: AZR-MMO-SND1
-  ${{ if eq(parameters.Deploy, 'TST') }}:
-    subscription: AZR-MMO-TST 
-  ${{ if eq(parameters.Deploy, 'PREMO') }}:
-    subscription: AZR-MMO-PREMO 
+  # Dynamic Environment URL
+  - group: DynamicsEnvironment  
+  - name: subscription
+    ${{ if eq(parameters.Deploy, 'SND') }}:
+      value: AZR-MMO-SND1
+    # ${{ if eq(parameters.Deploy, 'TST') }}:
+    #   value: AZR-MMO-TST  
 
 pool:
   name: DEFRA-COMMON-ubuntu2204-SSV5
@@ -80,9 +65,6 @@ steps:
         -servicebusConnectionName "${{ parameters.servicebusConnectionName }}" 
         -logicappsrefdataName "${{ parameters.logicappsrefdataName }}" 
         -logicappsprocessorName "${{ parameters.logicappsprocessorName }}" 
-        -common_appSettingsKey "${{ parameters.common_appSettingsKey }}" 
-        -servicebus_appSettingsKey "${{ parameters.servicebus_appSettingsKey }}" 
-        -storage_appSettingsKey "${{ parameters.storage_appSettingsKey }}" 
         -storageAccountName "${{ parameters.storageAccountName}}" 
         -storageAccountRGName "${{ parameters.storageAccountRGName}}"
 
@@ -100,6 +82,7 @@ steps:
       appType: functionApp
       appName: ${{ parameters.logicappsrefdataName }}
       package: "$(System.DefaultWorkingDirectory)/refdata-workflow$(Build.BuildId).zip"
+      appSettings: '-ORG_NAME $(ORG_NAME_${{ parameters.Deploy }})'
       deploymentMethod: zipDeploy
 
   - task: ArchiveFiles@2
@@ -110,10 +93,11 @@ steps:
       archiveFile: "$(System.DefaultWorkingDirectory)/processor-workflow$(Build.BuildId).zip"
 
   - task: AzureFunctionApp@1
-    displayName: "Azure Function processor workflow Deploy "
+    displayName: "Azure Function processor workflow Deploy"
     inputs:
       azureSubscription: "$(subscription)"
       appType: functionApp
       appName: ${{ parameters.logicappsprocessorName }}
       package: "$(System.DefaultWorkingDirectory)/processor-workflow$(Build.BuildId).zip"
+      appSettings: '-ORG_NAME $(ORG_NAME_${{ parameters.Deploy }})'
       deploymentMethod: zipDeploy
