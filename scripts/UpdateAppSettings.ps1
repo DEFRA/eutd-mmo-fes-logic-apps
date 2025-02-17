@@ -34,7 +34,7 @@ $serviceBusConnectionRuntimeUrl = az resource show `
     -o tsv
 
 # Fetch the storage account connection string
-Write-Host "Fetching Storage Account Connection String for '$storageAccountName'..."
+Write-Host "Fetching Storage Account Connection String for $storageAccountRGName '$storageAccountName'..."
 $connectionString = (az storage account keys list --resource-group $storageAccountRGName --account-name $storageAccountName --query "[0].value" -o tsv)
 
 if (-not $connectionString) {
@@ -56,10 +56,6 @@ if (-not $apiConnectionRuntimeUrl -or -not $serviceBusConnectionRuntimeUrl -or -
     Write-Error "Storage Account Primary URL: $tablePrimaryUrl"
     exit 1
 }
-
-# Write-Host "Fetched API Connection Runtime URL: $apiConnectionRuntimeUrl"
-# Write-Host "Fetched Service Bus Connection Runtime URL: $serviceBusConnectionRuntimeUrl"
-# Write-Host "Storage Connection String: $connectionStringFormatted"
 
 # Update App Settings in the App Services
 Write-Host "Updating App Settings for Logic App: $logicappsrefdataName..."

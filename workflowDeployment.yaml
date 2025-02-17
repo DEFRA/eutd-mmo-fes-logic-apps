@@ -1,100 +1,15 @@
-trigger: none
+trigger:
+  branches:
+    include:
+      - "main"
+ 
+resources:
+  repositories:
+    - repository: MMOPipelineCommon
+      name: mmo-fes-central-ado-pipeline-templates
+      type: git
+      ref: main
 
-parameters:
-  - name: Deploy
-    displayName: "Select Deployment Environment"
-    type: string
-    default: 'SND'
-    values:
-      - SND
-      - TST
-  - name: resourceGroupName
-    displayName: "Resource Group Name"
-    type: string
-    default: "SNDMMOINFRG1401"
-  - name: apiConnectionName
-    displayName: "API Connection Name"
-    type: string
-    default: "SNDMMOINFRG1402-API-CONNECTION-01"
-  - name: servicebusConnectionName
-    displayName: "Servicebus Connection Name"
-    type: string
-    default: "SNDMMOSERVICEBUS-API-CONNECTION-01"
-  - name: logicappsrefdataName
-    displayName: "Logicapps refdata Name"
-    type: string
-    default: "SNDMMOREFDATALA1401"
-  - name: logicappsprocessorName
-    displayName: "Logicapps processor Name"
-    type: string
-    default: "SNDMMOPROCESSORLA1401"
-  - name: storageAccountName
-    displayName: "Storage Account Name"
-    type: string
-    default: "sndmmoinfst1405"
-  - name: storageAccountRGName
-    displayName: "Storage Account Resource Groupd Name"
-    type: string
-    default: "SNDMMOINFRG1402" 
-
-variables:
-  # Dynamic Environment URL
-  - group: DynamicsEnvironment  
-  - name: subscription
-    ${{ if eq(parameters.Deploy, 'SND') }}:
-      value: AZR-MMO-SND1
-    # ${{ if eq(parameters.Deploy, 'TST') }}:
-    #   value: AZR-MMO-TST  
-
-pool:
-  name: DEFRA-COMMON-ubuntu2204-SSV5
-
-steps:
-  - task: AzureCLI@2
-    displayName: "Update App Settings copy"
-    inputs:
-      azureSubscription: "$(subscription)"
-      scriptType: pscore
-      scriptPath: scripts/UpdateAppSettings.ps1
-      arguments: >
-        -resourceGroupName "${{ parameters.resourceGroupName }}" 
-        -apiConnectionName "${{ parameters.apiConnectionName }}" 
-        -servicebusConnectionName "${{ parameters.servicebusConnectionName }}" 
-        -logicappsrefdataName "${{ parameters.logicappsrefdataName }}" 
-        -logicappsprocessorName "${{ parameters.logicappsprocessorName }}" 
-        -storageAccountName "${{ parameters.storageAccountName}}" 
-        -storageAccountRGName "${{ parameters.storageAccountRGName}}"
-
-  - task: ArchiveFiles@2
-    displayName: "Archive"
-    inputs:
-      rootFolderOrFile: "mmo-ecc-dyn-processor-refdata-workflow"
-      includeRootFolder: false
-      archiveFile: "$(System.DefaultWorkingDirectory)/refdata-workflow$(Build.BuildId).zip"
-
-  - task: AzureFunctionApp@1
-    displayName: "Azure Function refdata workflow Deploy"
-    inputs:
-      azureSubscription: "$(subscription)"
-      appType: functionApp
-      appName: ${{ parameters.logicappsrefdataName }}
-      package: "$(System.DefaultWorkingDirectory)/refdata-workflow$(Build.BuildId).zip"
-      appSettings: '-ORG_NAME $(ORG_NAME_${{ parameters.Deploy }})'
-      deploymentMethod: zipDeploy
-
-  - task: ArchiveFiles@2
-    displayName: "Archive"
-    inputs:
-      rootFolderOrFile: "mmo-ecc-dyn-processor-workflow"
-      includeRootFolder: false
-      archiveFile: "$(System.DefaultWorkingDirectory)/processor-workflow$(Build.BuildId).zip"
-
-  - task: AzureFunctionApp@1
-    displayName: "Azure Function processor workflow Deploy"
-    inputs:
-      azureSubscription: "$(subscription)"
-      appType: functionApp
-      appName: ${{ parameters.logicappsprocessorName }}
-      package: "$(System.DefaultWorkingDirectory)/processor-workflow$(Build.BuildId).zip"
-      appSettings: '-ORG_NAME $(ORG_NAME_${{ parameters.Deploy }})'
-      deploymentMethod: zipDeploy
+extends:
+  template: /includes/workflow-deployment.yaml@MMOPipelineCommon
+ 
