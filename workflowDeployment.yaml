@@ -2,14 +2,13 @@ trigger:
   branches:
     include:
       - "main"
- 
+
 resources:
   repositories:
     - repository: MMOPipelineCommon
-      name: mmo-fes-central-ado-pipeline-templates
+      name: mmo-fes-pipeline-common
       type: git
       ref: main
 
 extends:
   template: /includes/workflow-deployment.yaml@MMOPipelineCommon
- 
