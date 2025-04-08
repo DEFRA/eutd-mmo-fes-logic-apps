@@ -1,7 +1,16 @@
+parameters:
+  - name: deployFromFeature
+    displayName: "Deploy from Feature Branch"
+    type: boolean
+    default: false
+
 trigger:
   branches:
     include:
-      - "main"
+      - 'main'
+      - 'develop'
+      - 'hotfix/*'
+      - 'feature/*'
 
 resources:
   repositories:
@@ -12,3 +21,5 @@ resources:
 
 extends:
   template: /includes/workflow-deployment.yaml@MMOPipelineCommon
+  parameters:
+    deployFromFeature: ${{ parameters.deployFromFeature }}
