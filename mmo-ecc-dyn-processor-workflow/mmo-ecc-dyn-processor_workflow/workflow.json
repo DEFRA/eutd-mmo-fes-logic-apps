@@ -755,7 +755,7 @@
                                                     "mmofe_dataexpectedby": "@if(contains(string(item()),'landingDataExpectedDate'), formatDateTime(item()['landingDataExpectedDate'], 'yyyy-MM-dd'), null)",
                                                     "mmofe_datareceived": "@if(contains(string(item()),'dateDataReceived'), formatDateTime(item()['dateDataReceived'], 'yyyy-MM-dd'), null)",
                                                     "mmofe_datelanding": "@{formatDateTime(item()['landingDate'], 'yyyy-MM-dd')}",
-                                                    "mmofe_startdate": "@{formatDateTime(item()['startDate'], 'yyyy-MM-dd')}",
+                                                    "mmofe_startdate": "@if(contains(string(item()),'startDate'), formatDateTime(item()['startDate'], 'yyyy-MM-dd'), null)",                                                        
                                                     "mmofe_totalestimatedweight": "@if(contains(string(item()),'totalEstimatedWithTolerance'), json(string(item()['validation']))['totalEstimatedWithTolerance'],null)",
                                                     "mmofe_exporterbehaviourriskscore": "@if(contains(string(item()),'risking'), if(contains(item()['risking'],'exporterRiskScore'), item()['risking']['exporterRiskScore'], 0), 0)",
                                                     "mmofe_highlowrisk": "@if(contains(string(item()),'risking'), if(contains(item()['risking'],'highOrLowRisk'), if(equals(item()['risking']['highOrLowRisk'], 'Low'), true, false), false), false)",
