@@ -31,7 +31,7 @@
                 "conditions": [],
                 "runtimeConfiguration": {
                     "concurrency": {
-                        "runs": 30
+                        "runs": 20
                     }
                 }
             }
