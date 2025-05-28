@@ -3,6 +3,10 @@ parameters:
     displayName: "Deploy from Feature Branch"
     type: boolean
     default: false
+  - name: deployToSecondaryRegion
+    displayName: "Deploy to Secondary Region for DR"
+    type: boolean
+    default: false
 
 trigger:
   branches:
@@ -23,3 +27,4 @@ extends:
   template: /includes/workflow-deployment.yaml@MMOPipelineCommon
   parameters:
     deployFromFeature: ${{ parameters.deployFromFeature }}
+    deployToSecondaryRegion: ${{ parameters.deployToSecondaryRegion }}
