@@ -877,6 +877,7 @@
                               "mmofe_vesselmanuallyoverridden": "@if(contains(string(item()),'vesselOverriddenByAdmin'), item()['vesselOverriddenByAdmin'],false)",
                               "mmofe_vesselpln": "@{if(contains(string(item()),'vesselName'), item()['vesselName'],null)}",
                               "mmofe_vesselnumber": "@{if(contains(string(item()),'vesselPln'), item()['vesselPln'],null)}",
+                              "mmofe_geartype": "@{if(contains(string(item()),'gearType'), item()['gearType'],null)}",
                               "mmofe_vesselinterest": "@if(contains(string(item()),'risking'), if(contains(item()['risking'],'vessel'), item()['risking']['vessel'], 0), 0)",
                               "mmofe_vesselsize": "@{if(contains(string(item()),'vesselLength'), item()['vesselLength'],0)}",
                               "mmofe_weight": "@{if(contains(string(item()),'weight'), item()['weight'],null)}",
