@@ -31,7 +31,7 @@
         "conditions": [],
         "runtimeConfiguration": {
           "concurrency": {
-            "runs": 20
+            "runs": 10
           }
         }
       }
@@ -439,10 +439,16 @@
                       "body": {
                         "mmofe_name": "@{item()['id']}",
                         "mmofe_cncode": "@{item()['cnCode']}",
+                        "mmofe_productdescription": "@if(contains(string(item()),'productDescription'), item()['productDescription'],null)",
                         "mmofe_correlationid": "@variables('CorrelationId')",
                         "mmofe_exportedweight": "@if(contains(string(item()),'exportedWeight'), item()['exportedWeight'],null)",
                         "mmofe_foreigncatchcertificatenumber": "@{item()['foreignCatchCertificateNumber']}",
+                        "mmofe_issuingcountry": "@if(contains(string(item()),'issuingCountry'), item()['issuingCountry'],null)",
                         "mmofe_importedweight": "@if(contains(string(item()),'importedWeight'), item()['importedWeight'],null)",
+                        "mmofe_netweightproductarrival": "@if(contains(string(item()),'netWeightProductArrival'), item()['netWeightProductArrival'],null)",
+                        "mmofe_netweightfisheryproductarrival": "@if(contains(string(item()),'netWeightFisheryProductArrival'), item()['netWeightFisheryProductArrival'],null)",
+                        "mmofe_netweightproductdeparture": "@if(contains(string(item()),'netWeightProductDeparture'), item()['netWeightProductDeparture'],null)",
+                        "mmofe_netweightfisheryproductdeparture": "@if(contains(string(item()),'netWeightFisheryProductDeparture'), item()['netWeightFisheryProductDeparture'],null)",
                         "mmofe_integrationpayload": "@{string(item())}",
                         "mmofe_iteration": "@variables('Iteration')",
                         "mmofe_overuseinfo": "@{if(contains(string(item()),'validation'), if(contains(item()['validation'],'overuseInfo'), join(item()['validation']['overuseInfo'], ', '), null), null)}",
@@ -887,7 +893,10 @@
                               "_mmofe_validationstatusid_value": "@{outputs('ValidationStatusRetro')}",
                               "_mmofe_speciesid_value": "@{outputs('SpeciesId')}",
                               "_mmofe_stateid_value": "@{outputs('StateId')}",
-                              "_mmofe_validationstatusapplicationsubmissionid_value": "@{outputs('ValidationStatusId')}"
+                              "_mmofe_validationstatusapplicationsubmissionid_value": "@{outputs('ValidationStatusId')}",
+                              "mmofe_highseasarea": "@if(contains(string(item()),'highSeasArea'), if(equals(item()['highSeasArea'],'Yes'),961040000, 961040001), null)",
+                              "mmofe_rfmo": "@{if(contains(string(item()),'rfmo'), item()['rfmo'],null)}",
+                              "mmofe_eez": "@{if(contains(string(item()),'exclusiveEconomicZones'), item()['exclusiveEconomicZones'],null)}"
                             },
                             "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_landingses'))}/items"
                           }
