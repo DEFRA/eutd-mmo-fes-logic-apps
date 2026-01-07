@@ -15,7 +15,12 @@ trigger:
       - 'develop'
       - 'hotfix/*'
       - 'feature/*'
-
+pr:
+  branches:
+    include:
+      - "main"
+      - "develop"
+			
 resources:
   repositories:
     - repository: MMOPipelineCommon
