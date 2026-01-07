@@ -11,16 +11,16 @@ parameters:
 trigger:
   branches:
     include:
-      - 'main'
-      - 'develop'
-      - 'hotfix/*'
-      - 'feature/*'
+      - "main"
+      - "develop"
+      - "hotfix/*"
+      - "feature/*"
 pr:
   branches:
     include:
       - "main"
       - "develop"
-			
+
 resources:
   repositories:
     - repository: MMOPipelineCommon
