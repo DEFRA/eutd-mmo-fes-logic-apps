@@ -7,14 +7,23 @@ parameters:
     displayName: "Deploy to Secondary Region for DR"
     type: boolean
     default: false
-
+  - name: skipPRE1
+    displayName: 'Skip PRE1 Deployment'
+    type: boolean
+    default: false
+    
 trigger:
   branches:
     include:
-      - 'main'
-      - 'develop'
-      - 'hotfix/*'
-      - 'feature/*'
+      - "main"
+      - "develop"
+      - "hotfix/*"
+      - "feature/*"
+pr:
+  branches:
+    include:
+      - "main"
+      - "develop"
 
 resources:
   repositories:
