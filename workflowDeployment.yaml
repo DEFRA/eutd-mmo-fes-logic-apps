@@ -19,6 +19,9 @@ trigger:
       - "develop"
       - "hotfix/*"
       - "feature/*"
+  paths:
+    exclude:
+      - ".github/**"
 pr:
   branches:
     include:
