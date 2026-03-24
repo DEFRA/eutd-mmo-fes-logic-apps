@@ -100,7 +100,7 @@
                                         }
                                     },
                                     "method": "get",
-                                    "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('contacts'))}/items",
+                                     "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('contacts'))}/items",
                                     "queries": {
                                         "$filter": "contactid eq '@{variables('ContactId')}'",
                                         "$top": 1
@@ -484,7 +484,7 @@
                                                 }
                                             },
                                             "method": "get",
-                                            "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_species'))}/items",
+                                           "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_species'))}/items",
                                             "queries": {
                                                 "$filter": "mmofe_name eq '@{item()['species']}'",
                                                 "$top": 1
@@ -505,7 +505,7 @@
                                                 }
                                             },
                                             "method": "get",
-                                            "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_validationstatuses'))}/items",
+                                           "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_validationstatuses'))}/items",
                                             "queries": {
                                                 "$filter": "mmofe_name eq '@{if(contains(string(item()),'status'), json(string(item()['validation']))['status'],'')}'",
                                                 "$top": 1
@@ -726,7 +726,7 @@
                                                         }
                                                     },
                                                     "method": "get",
-                                                    "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_landingses'))}/items",
+                                                     "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_landingses'))}/items",
                                                     "queries": {
                                                         "$filter": "_mmofe_documentid_value eq '@{variables('DocumentId')}' and mmofe_name eq '@{items('For_each_3')['id']}' and mmofe_numberoftotalsubmissions eq @{outputs('NumberOfTotalSubmission')}",
                                                         "$top": 1
@@ -867,7 +867,8 @@
                                                             "mmofe_numberoftotalsubmissions": "@outputs('NumberOfTotalSubmission')",
                                                             "mmofe_overuseinfo": "@{if(contains(string(item()),'risking'), if(contains(item()['risking'],'overuseInfo'), join(item()['risking']['overuseInfo'], ', '), null), null)}",
                                                             "mmofe_adminpresentation": "@{if(contains(string(item()),'adminPresentation'), item()['adminPresentation'],null)}",
-                                                            "mmofe_rfmo": "@{if(contains(string(item()),'rfmo'), item()['rfmo'],null)}",                                                            "mmofe_retrospectiveendingon": "@if(contains(string(item()),'landingDataEndDate'), formatDateTime(item()['landingDataEndDate'], 'yyyy-MM-dd'), null)",
+                                                            "mmofe_rfmo": "@{if(contains(string(item()),'rfmo'), item()['rfmo'],null)}", 
+                                                            "mmofe_retrospectiveendingon": "@if(contains(string(item()),'landingDataEndDate'), formatDateTime(item()['landingDataEndDate'], 'yyyy-MM-dd'), null)",
                                                             "mmofe_daylimitreached": "@if(contains(string(item()),'is14DayLimitReached'), item()['is14DayLimitReached'],null)",
                                                             "mmofe_salesnoteurl": "@{if(contains(string(item()),'salesNoteUrl'), json(string(item()['validation']))['salesNoteUrl'],null)}",
                                                             "mmofe_sourcedata": "@outputs('Source')",
@@ -947,7 +948,7 @@
                                                                 "body": {
                                                                     "mmofe_landingoutcomeatretrospectivecheck": 961040000
                                                                 },
-                                                                "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_landingses'))}/items/@{encodeURIComponent(encodeURIComponent(outputs('Updatelanding2')))}"
+                                                               "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_landingses'))}/items/@{encodeURIComponent(encodeURIComponent(outputs('Updatelanding2')))}"
                                                             }
                                                         }
                                                     },
@@ -1154,10 +1155,10 @@
                                     },
                                     "Source": {
                                         "type": "Compose",
-                                        "inputs": "@if(contains(string( item() ),'source'), if(equals(item()['source'],'LANDING_DECLARATION'),961040001, if(equals(item()['source'],'CATCH_RECORDING'),961040002, if(equals(item()['source'],'ELOG'),961040000,null))),null)",
+                                        "inputs": "@if(empty(item()?['source']),null,if(equals(item()?['source'],'LANDING_DECLARATION'),961040001,if(equals(item()?['source'],'CATCH_RECORDING'),961040002,if(equals(item()?['source'],'ELOG'),961040000,null))))",
                                         "runAfter": {
                                             "PresentationId": [
-                                                "Succeeded"
+                                                "SUCCEEDED"
                                             ]
                                         }
                                     },
@@ -1641,7 +1642,7 @@
                                                             }
                                                         },
                                                         "method": "get",
-                                                        "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_landingses'))}/items",
+                                                       "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_landingses'))}/items",
                                                         "queries": {
                                                             "$filter": "_mmofe_documentid_value eq '@{variables('DocumentId')}'"
                                                         }
@@ -3101,7 +3102,7 @@
                         "mmofe_processstatus": 961040001,
                         "_ownerid_type": ""
                     },
-                    "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_documents'))}/items/@{encodeURIComponent(encodeURIComponent(variables('DocumentId')))}"
+                   "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_documents'))}/items/@{encodeURIComponent(encodeURIComponent(variables('DocumentId')))}"
                 },
                 "runAfter": {
                     "Complete_the_message_in_a_queue": [
