@@ -38,3 +38,4 @@ extends:
   parameters:
     deployFromFeature: ${{ parameters.deployFromFeature }}
     deployToSecondaryRegion: ${{ parameters.deployToSecondaryRegion }}
+    skipPRE1: ${{ parameters.skipPRE1 }}
