@@ -25,6 +25,14 @@
             "connection": {
                 "id": "/subscriptions/@{appsetting('WORKFLOWS_SUBSCRIPTION_ID')}/resourceGroups/@{appsetting('RESOURCEGROUP_NAME')}/providers/Microsoft.Web/connections/@{appsetting('REFDATA_STORAGE_CONNECTION_NAME')}"
             },
+            "connectionProperties": {
+                "authentication": {
+                    "audience": "https://storage.azure.com",
+                    "type": "ManagedServiceIdentity",
+                    "identity": "@{appsetting('MANAGED_IDENTITY_RESOURCE_ID')}"
+                }
+            },
+            "connectionRuntimeUrl": "@{appsetting('REFDATATABLE_CONNECTION_RUNTIME_URL')}",
             "displayName": "refDataTable"
         },
         "servicebus": {
