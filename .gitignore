@@ -13,7 +13,4 @@ mmo-fes-processor-document-case-creation/workflow-designtime/local.settings.json
 eutd-mmo-fes-logic-apps-workspace.code-workspace
 mmo-ecc-dyn-processor-refdata-workflow/workflow-designtime/host.json
 mmo-ecc-dyn-processor-refdata-workflow/workflow-designtime/local.settings.json
-.azurite/__azurite_db_blob__.json
-.azurite/__azurite_db_blob_extent__.json
-.azurite/__azurite_db_queue__.json
-.azurite/__azurite_db_queue_extent__.json
+.azurite
