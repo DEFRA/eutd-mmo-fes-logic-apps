@@ -64,3 +64,12 @@ Pipeline in `workflowDeployment.yaml` extends `DEFRA/eutd-mmo-fes-pipeline-commo
 ## Skills
 
 Use `/develop` for implementing, modifying, or researching Logic Apps workflows. Use `/review` for reviewing workflow definitions and connections.
+
+### Optimisation programme
+
+For the performance/consistency/audit/reliability optimisation effort, use the **Logic Apps Optimization** agent (`.github/agents/logic-apps-optimization.agent.md`) and its skills:
+
+- `/harden-workflow` — retrofit error handling, retry policies, Service Bus message settlement, idempotency, and clean Application Insights telemetry into an existing workflow.
+- `/split-workflow` — split a monolithic workflow into smaller workflows on separate logic apps connected by new Service Bus queues (routing-slip pattern).
+
+These are governed by the optimisation instruction files in `.github/instructions/`: `logic-apps-error-handling`, `logic-apps-observability`, and `logic-apps-decomposition`.

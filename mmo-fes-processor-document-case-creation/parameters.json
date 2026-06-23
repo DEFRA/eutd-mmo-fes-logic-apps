@@ -1,0 +1,10 @@
+{
+  "HostUrl": {
+    "type": "String",
+    "value": "@appsetting('ORG_NAME')"
+  },
+  "BlobStorage": {
+    "type": "String",
+    "value": "@appsetting('STORAGEACCOUNT_URL')"
+  }
+}

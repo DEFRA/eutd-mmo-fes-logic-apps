@@ -1,0 +1,2077 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "contentVersion": "1.0.0.0",
+        "triggers": {
+            "When_a_message_is_received_in_a_queue_(peek-lock)": {
+                "type": "ApiConnection",
+                "inputs": {
+                    "host": {
+                        "connection": {
+                            "referenceName": "servicebus"
+                        }
+                    },
+                    "method": "get",
+                    "path": "/@{encodeURIComponent(encodeURIComponent('mmo-ecc-dyn-req-queue'))}/messages/head/peek",
+                    "queries": {
+                        "queueType": "Main",
+                        "sessionId": "Next Available"
+                    }
+                },
+                "recurrence": {
+                    "interval": 30,
+                    "frequency": "Second"
+                },
+                "conditions": [],
+                "runtimeConfiguration": {
+                    "concurrency": {
+                        "runs": 10
+                    }
+                },
+                "correlation": {
+                    "clientTrackingId": "@coalesce(json(base64ToString(triggerBody()?['ContentData']))?['_correlationId'], guid())"
+                }
+            }
+        },
+        "actions": {
+            "Parse_Payload_to_Object": {
+                "type": "Compose",
+                "description": "Create a JSON object based on the payload provided. N.B. we're not using the Parse JSON operation as we expect more than 1 payload type.",
+                "inputs": "@json(base64ToString(triggerBody()?['ContentData']))",
+                "runAfter": {}
+            },
+            "Tranform_Payload": {
+                "type": "Compose",
+                "inputs": "@if( contains(outputs('Parse_Payload_to_Object'), 'documentNumber'), outputs('Parse_Payload_to_Object') ,json(concat('{','landings:', string( outputs('Parse_Payload_to_Object') ),'}')))",
+                "runAfter": {
+                    "Parse_Payload_to_Object": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Initialise_Payload": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "Payload",
+                            "type": "object",
+                            "value": {}
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Tranform_Payload": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Initialise_Landings_Array": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "Landings",
+                            "type": "array",
+                            "value": []
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Initialise_Payload": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Initialise_Catches_Products_Array": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "CatchesProductsArray",
+                            "type": "array",
+                            "value": []
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Initialise_Landings_Array": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Initialise_Exporter_Object": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "Exporter",
+                            "type": "object",
+                            "value": {}
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Initialise_Catches_Products_Array": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Initialise_CorrelationId": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "CorrelationId",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Initialise_Exporter_Object": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Initialise_DocumentNumber": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "DocumentNumber",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Initialise_CorrelationId": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Initialise_DocumentDate": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "DocumentDate",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Initialise_DocumentNumber": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Initialise_DocumentUrl": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "DocumentUrl",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Initialise_DocumentDate": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Initialise_DocumentId": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "DocumentId",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Initialise_DocumentUrl": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Initialise_CustomerId": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "CustomerId",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Initialise_DocumentId": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Initialise_CustomerIdType": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "CustomerIdType",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Initialise_CustomerId": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Initialise_AccountId": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "AccountId",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Initialise_CustomerIdType": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Initialise_ContactId": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "ContactId",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Initialise_AccountId": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Initialise_CaseId": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "CaseId",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Initialise_ContactId": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Initialise_CaseTypeName": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "CaseTypeName",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Initialise_CaseId": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Initialise_CaseTypeName2": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "CaseTypeName2",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Initialise_CaseTypeName": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Initialise_CaseTypeName4": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "CaseTypeName4",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Initialise_CaseTypeName2": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Initialise_CaseTypeId": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "CaseTypeId",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Initialise_CaseTypeName4": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Initialise_CaseTypeId2": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "CaseTypeId2",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Initialise_CaseTypeId": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Initialize_CaseStatusAtSubmission": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "CaseStatusAtSubmission",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Initialise_CaseTypeId2": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Initialise_DevolvedAdministrationName": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "DevolvedAdministrationName",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Initialize_CaseStatusAtSubmission": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Initialise_DevolvedAdministrationId": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "DevolvedAdministrationId",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Initialise_DevolvedAdministrationName": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Initialise_Iteration": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "Iteration",
+                            "type": "integer"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Initialise_DevolvedAdministrationId": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Initialise_NumberOfFailedSubmissions": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "NumberOfFailedSubmissions",
+                            "type": "integer"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Initialise_Iteration": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Initialize_CloneDocNo": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "CloneDocNo",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Initialise_NumberOfFailedSubmissions": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Initialize_CloneDocId": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "CloneDocId",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Initialize_CloneDocNo": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Initialize_Temination": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "Terminate",
+                            "type": "boolean",
+                            "value": "@bool(false)"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Initialize_CloneDocId": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Process_Document_Case_And_Handoff": {
+                "type": "Scope",
+                "description": "Stage 1 of the split: extract payload values, resolve reference data and exporter, create/update the document and case, then publish the document/case hand-off envelope and complete the source message.",
+                "actions": {
+                    "Set_Payload": {
+                        "type": "SetVariable",
+                        "inputs": {
+                            "name": "Payload",
+                            "value": "@outputs('Tranform_Payload')"
+                        },
+                        "runAfter": {}
+                    },
+                    "Set_Landings_Array": {
+                        "type": "SetVariable",
+                        "inputs": {
+                            "name": "Landings",
+                            "value": "@if( contains(variables('Payload'), 'landings'), variables('Payload')['landings'], null)"
+                        },
+                        "runAfter": {
+                            "Set_Payload": [
+                                "Succeeded"
+                            ]
+                        }
+                    },
+                    "Set_Catches_Products_Array": {
+                        "type": "SetVariable",
+                        "inputs": {
+                            "name": "CatchesProductsArray",
+                            "value": "@if( contains(variables('Payload'), 'catches'), variables('Payload')['catches'], if( contains(variables('Payload'), 'products'), variables('Payload')['products'], null))"
+                        },
+                        "runAfter": {
+                            "Set_Landings_Array": [
+                                "Succeeded"
+                            ]
+                        }
+                    },
+                    "Set_Exporter_Object": {
+                        "type": "SetVariable",
+                        "description": "Sets the Exporter object using the exporter or exporterDetails property in the Payload object",
+                        "inputs": {
+                            "name": "Exporter",
+                            "value": "@if(contains(variables('Payload'),'exporter'),variables('Payload')['exporter'],if(contains(variables('Payload'),'exporterDetails'),variables('Payload')['exporterDetails'], if(contains(variables('Payload'),'exporterId'), json(concat('{','exporterNumber:',variables('Payload')['exporterId'])), first(variables('Landings'))['exporter'])))"
+                        },
+                        "runAfter": {
+                            "Set_Catches_Products_Array": [
+                                "Succeeded"
+                            ]
+                        }
+                    },
+                    "Set_CorrelationId": {
+                        "type": "SetVariable",
+                        "inputs": {
+                            "name": "CorrelationId",
+                            "value": "@{if(contains(variables('Payload'),'_correlationId'),variables('Payload')['_correlationId'],if( greater(length(variables('Landings')),0), first( variables('Landings'))['_correlationId'],''))}"
+                        },
+                        "runAfter": {
+                            "Set_Exporter_Object": [
+                                "Succeeded"
+                            ]
+                        }
+                    },
+                    "Set_ContactId": {
+                        "type": "SetVariable",
+                        "inputs": {
+                            "name": "ContactId",
+                            "value": "@{if(contains(variables('Exporter'),'contactid'), variables('Exporter')['contactId'],'')}"
+                        },
+                        "runAfter": {
+                            "Set_CorrelationId": [
+                                "Succeeded"
+                            ]
+                        }
+                    },
+                    "Set_AccountId": {
+                        "type": "SetVariable",
+                        "inputs": {
+                            "name": "AccountId",
+                            "value": "@{if(contains(variables('Exporter'),'accountId'), variables('Exporter')['accountId'],'')}"
+                        },
+                        "runAfter": {
+                            "Set_ContactId": [
+                                "Succeeded"
+                            ]
+                        }
+                    },
+                    "Set_DocumentNumber": {
+                        "type": "SetVariable",
+                        "inputs": {
+                            "name": "DocumentNumber",
+                            "value": "@{if(contains(variables('Payload'),'documentNumber'),variables('Payload')['documentNumber'],first( variables('Landings'))['documentNumber'])}"
+                        },
+                        "runAfter": {
+                            "Set_AccountId": [
+                                "Succeeded"
+                            ]
+                        }
+                    },
+                    "Set_DocumentDate": {
+                        "type": "SetVariable",
+                        "inputs": {
+                            "name": "DocumentDate",
+                            "value": "@{if(contains(variables('Payload'),'documentDate'),variables('Payload')['documentDate'],if( greater(length(variables('Landings')),0), first( variables('Landings'))['documentDate'],''))}"
+                        },
+                        "runAfter": {
+                            "Set_DocumentNumber": [
+                                "Succeeded"
+                            ]
+                        }
+                    },
+                    "Set_DocumentUrl": {
+                        "type": "SetVariable",
+                        "inputs": {
+                            "name": "DocumentUrl",
+                            "value": "@{if(contains(variables('Payload'),'documentUrl'),variables('Payload')['documentUrl'],if(and(greater(length(variables('Landings')),0),contains(variables('Landings'),'documentUrl') ), first( variables('Landings'))['documentUrl'],''))}"
+                        },
+                        "runAfter": {
+                            "Set_DocumentDate": [
+                                "Succeeded"
+                            ]
+                        }
+                    },
+                    "Set_DevolvedAdministrationName": {
+                        "type": "SetVariable",
+                        "inputs": {
+                            "name": "DevolvedAdministrationName",
+                            "value": "@{if(contains(variables('Payload'),'da'),variables('Payload')['da'],null)}"
+                        },
+                        "runAfter": {
+                            "Set_DocumentUrl": [
+                                "Succeeded"
+                            ]
+                        }
+                    },
+                    "Set_CaseTypeName": {
+                        "type": "SetVariable",
+                        "description": "If the root of the payload is an array, then this implies a Landing Detail payload, which is a Catch Certificate Case Type",
+                        "inputs": {
+                            "name": "CaseTypeName",
+                            "value": "@{if( contains(variables('Payload'),'caseType1'), if(equals(variables('Payload')['caseType1'], 'CC'),'Catch Certificate',if(equals(variables('Payload')['caseType1'],'PS'),'Processing Statement',if(equals(variables('Payload')['caseType1'],'SD'),'Storage Document',''))),'Catch Certificate')}"
+                        },
+                        "runAfter": {
+                            "Set_DevolvedAdministrationName": [
+                                "Succeeded"
+                            ]
+                        }
+                    },
+                    "Set_CaseTypeName4": {
+                        "type": "SetVariable",
+                        "inputs": {
+                            "name": "CaseTypeName4",
+                            "value": "@{if(contains(variables('Payload'),'caseStatusAtSubmission'),variables('Payload')['caseStatusAtSubmission'],null)}"
+                        },
+                        "runAfter": {
+                            "Set_CaseTypeName": [
+                                "Succeeded"
+                            ]
+                        }
+                    },
+                    "Set_Iteration": {
+                        "type": "SetVariable",
+                        "inputs": {
+                            "name": "Iteration",
+                            "value": "@if(contains(variables('Payload'),'numberOfFailedSubmissions'),variables('Payload')['numberOfFailedSubmissions'],0)"
+                        },
+                        "runAfter": {
+                            "Set_CaseTypeName4": [
+                                "Succeeded"
+                            ]
+                        }
+                    },
+                    "Set_NumberOfFailedSubmissions": {
+                        "type": "SetVariable",
+                        "inputs": {
+                            "name": "NumberOfFailedSubmissions",
+                            "value": "@if(contains(variables('Payload'), 'numberOfFailedSubmissions'), variables('Payload')['numberOfFailedSubmissions'], 0)"
+                        },
+                        "runAfter": {
+                            "Set_Iteration": [
+                                "Succeeded"
+                            ]
+                        }
+                    },
+                    "Set_CloneDocNo": {
+                        "type": "SetVariable",
+                        "inputs": {
+                            "name": "CloneDocNo",
+                            "value": "@{if(contains(variables('Payload'),'clonedFrom'),variables('Payload')['clonedFrom'], null)}"
+                        },
+                        "runAfter": {
+                            "Set_NumberOfFailedSubmissions": [
+                                "Succeeded"
+                            ]
+                        }
+                    },
+                    "Is_Cloned_Document": {
+                        "type": "If",
+                        "expression": {
+                            "and": [
+                                {
+                                    "not": {
+                                        "equals": [
+                                            "@variables('CloneDocNo')",
+                                            "@null"
+                                        ]
+                                    }
+                                },
+                                {
+                                    "not": {
+                                        "equals": [
+                                            "@variables('CloneDocNo')",
+                                            ""
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        "actions": {
+                            "Get_ClonedDocument": {
+                                "type": "ApiConnection",
+                                "inputs": {
+                                    "host": {
+                                        "connection": {
+                                            "referenceName": "commondataservice"
+                                        }
+                                    },
+                                    "method": "get",
+                                    "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_documents'))}/items",
+                                    "queries": {
+                                        "$filter": "mmofe_name eq '@{variables('CloneDocNo')}'",
+                                        "$top": 1
+                                    }
+                                }
+                            },
+                            "Set_CloneDocId": {
+                                "type": "SetVariable",
+                                "inputs": {
+                                    "name": "CloneDocId",
+                                    "value": "@{body('Get_ClonedDocument')?['value'][0]['mmofe_documentid']}"
+                                },
+                                "runAfter": {
+                                    "Get_ClonedDocument": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            }
+                        },
+                        "else": {
+                            "actions": {}
+                        },
+                        "runAfter": {
+                            "Set_CloneDocNo": [
+                                "Succeeded"
+                            ]
+                        }
+                    },
+                    "Map_Casetype2_for_PS_and_SD": {
+                        "type": "If",
+                        "expression": {
+                            "and": [
+                                {
+                                    "not": {
+                                        "contains": [
+                                            "@variables('Payload')",
+                                            "caseStatusAtSubmission"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        "actions": {
+                            "Set_CaseTypeName2": {
+                                "type": "Scope",
+                                "actions": {
+                                    "Get_CaseTypeName_from_either_Case_or_Landing_Status": {
+                                        "type": "Compose",
+                                        "inputs": "@if(contains(variables('Payload'),'caseType2'),variables('Payload')['caseType2'],first(variables('Landings'))['status'])"
+                                    },
+                                    "Switch_3": {
+                                        "type": "Switch",
+                                        "expression": "@outputs('Get_CaseTypeName_from_either_Case_or_Landing_Status')",
+                                        "default": {
+                                            "actions": {
+                                                "Set_variable_15": {
+                                                    "type": "SetVariable",
+                                                    "inputs": {
+                                                        "name": "CaseTypeName2",
+                                                        "value": "@{outputs('Get_CaseTypeName_from_either_Case_or_Landing_Status')}"
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "cases": {
+                                            "Case": {
+                                                "actions": {
+                                                    "Set_variable_16": {
+                                                        "type": "SetVariable",
+                                                        "inputs": {
+                                                            "name": "CaseTypeName2",
+                                                            "value": "Real Time Validation - Successful"
+                                                        }
+                                                    }
+                                                },
+                                                "case": "Validation Success"
+                                            },
+                                            "Case_2": {
+                                                "actions": {
+                                                    "Set_variable_20": {
+                                                        "type": "SetVariable",
+                                                        "inputs": {
+                                                            "name": "CaseTypeName2",
+                                                            "value": "Pending Landing Data"
+                                                        }
+                                                    }
+                                                },
+                                                "case": "Pending Landing Data"
+                                            },
+                                            "Case_3": {
+                                                "actions": {
+                                                    "Set_variable_19": {
+                                                        "type": "SetVariable",
+                                                        "inputs": {
+                                                            "name": "CaseTypeName2",
+                                                            "value": "Real Time Validation - Overuse Failure"
+                                                        }
+                                                    }
+                                                },
+                                                "case": "Validation Failure - Overuse"
+                                            }
+                                        },
+                                        "runAfter": {
+                                            "Get_CaseTypeName_from_either_Case_or_Landing_Status": [
+                                                "Succeeded"
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "else": {
+                            "actions": {}
+                        },
+                        "runAfter": {
+                            "Is_Cloned_Document": [
+                                "Succeeded"
+                            ]
+                        }
+                    },
+                    "Retrieve_Case_Types_and_Set_CaseTypeId": {
+                        "type": "Scope",
+                        "actions": {
+                            "Get_CaseType": {
+                                "type": "Http",
+                                "inputs": {
+                                    "uri": "@{parameters('BlobStorage')}/mmorefdata",
+                                    "method": "GET",
+                                    "headers": {
+                                        "Accept": "application/json",
+                                        "x-ms-version": "2019-07-07"
+                                    },
+                                    "queries": {
+                                        "$filter": "PartitionKey eq 'CaseType' and RowKey eq '@{variables('CaseTypeName')}'"
+                                    },
+                                    "authentication": {
+                                        "audience": "https://storage.azure.com",
+                                        "type": "ManagedServiceIdentity"
+                                    }
+                                }
+                            },
+                            "Condition_5": {
+                                "type": "If",
+                                "expression": {
+                                    "and": [
+                                        {
+                                            "not": {
+                                                "equals": [
+                                                    "@body('Get_CaseType')?['value']?[0]?['RowKey']",
+                                                    "@null"
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                },
+                                "actions": {
+                                    "Set_CaseTypeId": {
+                                        "type": "SetVariable",
+                                        "inputs": {
+                                            "name": "CaseTypeId",
+                                            "value": "@{body('Get_CaseType')?['value']?[0]?['id']}"
+                                        }
+                                    }
+                                },
+                                "else": {
+                                    "actions": {
+                                        "Default_CaseTypeId": {
+                                            "type": "SetVariable",
+                                            "inputs": {
+                                                "name": "CaseTypeId",
+                                                "value": "00000000-0000-0000-0000-000000000000"
+                                            }
+                                        }
+                                    }
+                                },
+                                "runAfter": {
+                                    "Get_CaseType": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            }
+                        },
+                        "runAfter": {
+                            "Map_Casetype2_for_PS_and_SD": [
+                                "Succeeded"
+                            ]
+                        }
+                    },
+                    "Retrieve_Case_Types_and_Set_CaseTypeId2": {
+                        "type": "Scope",
+                        "actions": {
+                            "Get_CaseType2": {
+                                "type": "Http",
+                                "inputs": {
+                                    "uri": "@{parameters('BlobStorage')}/mmorefdata",
+                                    "method": "GET",
+                                    "headers": {
+                                        "Accept": "application/json",
+                                        "x-ms-version": "2019-07-07"
+                                    },
+                                    "queries": {
+                                        "$filter": "PartitionKey eq 'CaseType' and RowKey eq '@{variables('CaseTypeName2')}'"
+                                    },
+                                    "authentication": {
+                                        "audience": "https://storage.azure.com",
+                                        "type": "ManagedServiceIdentity"
+                                    }
+                                }
+                            },
+                            "Condition_3": {
+                                "type": "If",
+                                "expression": {
+                                    "and": [
+                                        {
+                                            "not": {
+                                                "equals": [
+                                                    "@body('Get_CaseType2')?['value']?[0]?['RowKey']",
+                                                    "@null"
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                },
+                                "actions": {
+                                    "Set_caseType2_ID": {
+                                        "type": "SetVariable",
+                                        "inputs": {
+                                            "name": "CaseTypeId2",
+                                            "value": "@{body('Get_CaseType2')?['value']?[0]?['id']}"
+                                        }
+                                    }
+                                },
+                                "else": {
+                                    "actions": {}
+                                },
+                                "runAfter": {
+                                    "Get_CaseType2": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            }
+                        },
+                        "runAfter": {
+                            "Map_Casetype2_for_PS_and_SD": [
+                                "Succeeded"
+                            ]
+                        }
+                    },
+                    "Retrieve_Case_Types_and_Set_CaseStatusAtSubmission": {
+                        "type": "Scope",
+                        "actions": {
+                            "Get_caseStatusAtSubmission": {
+                                "type": "Http",
+                                "inputs": {
+                                    "uri": "@{parameters('BlobStorage')}/mmorefdata",
+                                    "method": "GET",
+                                    "headers": {
+                                        "Accept": "application/json",
+                                        "x-ms-version": "2019-07-07"
+                                    },
+                                    "queries": {
+                                        "$filter": "PartitionKey eq 'CaseType' and RowKey eq '@{variables('CaseTypeName4')}'"
+                                    },
+                                    "authentication": {
+                                        "audience": "https://storage.azure.com",
+                                        "type": "ManagedServiceIdentity"
+                                    }
+                                }
+                            },
+                            "Condition_6": {
+                                "type": "If",
+                                "expression": {
+                                    "and": [
+                                        {
+                                            "not": {
+                                                "equals": [
+                                                    "@body('Get_caseStatusAtSubmission')?['value']?[0]?['RowKey']",
+                                                    "@null"
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                },
+                                "actions": {
+                                    "Set_variable_3": {
+                                        "type": "SetVariable",
+                                        "inputs": {
+                                            "name": "CaseStatusAtSubmission",
+                                            "value": "@{body('Get_caseStatusAtSubmission')?['value']?[0]?['id']}"
+                                        }
+                                    }
+                                },
+                                "else": {
+                                    "actions": {}
+                                },
+                                "runAfter": {
+                                    "Get_caseStatusAtSubmission": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            }
+                        },
+                        "runAfter": {
+                            "Map_Casetype2_for_PS_and_SD": [
+                                "Succeeded"
+                            ]
+                        }
+                    },
+                    "Retrieve_Devolved_Administration_and_Set_DevolvedAdministrationId": {
+                        "type": "Scope",
+                        "actions": {
+                            "Get_Devolved_Administration": {
+                                "type": "Http",
+                                "inputs": {
+                                    "uri": "@{parameters('BlobStorage')}/mmorefdata",
+                                    "method": "GET",
+                                    "headers": {
+                                        "Accept": "application/json",
+                                        "x-ms-version": "2019-07-07"
+                                    },
+                                    "queries": {
+                                        "$filter": "PartitionKey eq 'DevolvedAdministrations' and RowKey eq '@{variables('DevolvedAdministrationName')}'"
+                                    },
+                                    "authentication": {
+                                        "audience": "https://storage.azure.com",
+                                        "type": "ManagedServiceIdentity"
+                                    }
+                                }
+                            },
+                            "Condition_4": {
+                                "type": "If",
+                                "expression": {
+                                    "and": [
+                                        {
+                                            "not": {
+                                                "equals": [
+                                                    "@body('Get_Devolved_Administration')?['value']?[0]?['RowKey']",
+                                                    "@null"
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                },
+                                "actions": {
+                                    "Set_Devolved_Administration_ID": {
+                                        "type": "SetVariable",
+                                        "inputs": {
+                                            "name": "DevolvedAdministrationId",
+                                            "value": "@{body('Get_Devolved_Administration')?['value']?[0]?['id']}"
+                                        }
+                                    }
+                                },
+                                "else": {
+                                    "actions": {}
+                                },
+                                "runAfter": {
+                                    "Get_Devolved_Administration": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            }
+                        },
+                        "runAfter": {
+                            "Map_Casetype2_for_PS_and_SD": [
+                                "Succeeded"
+                            ]
+                        }
+                    },
+                    "Create_or_Retrieve_Exporter_and_Set_CustomerId": {
+                        "type": "Scope",
+                        "actions": {
+                            "If_AccountId_IS_NOT_null": {
+                                "type": "If",
+                                "expression": {
+                                    "and": [
+                                        {
+                                            "not": {
+                                                "equals": [
+                                                    "@variables('AccountId')",
+                                                    ""
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                },
+                                "actions": {
+                                    "Get_Accounts_where_accountid_eq_ExporterNumber": {
+                                        "type": "ApiConnection",
+                                        "inputs": {
+                                            "host": {
+                                                "connection": {
+                                                    "referenceName": "commondataservice"
+                                                }
+                                            },
+                                            "method": "get",
+                                            "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('accounts'))}/items",
+                                            "queries": {
+                                                "$filter": "accountid eq '@{variables('AccountId')}'",
+                                                "$top": 1
+                                            }
+                                        }
+                                    }
+                                },
+                                "else": {
+                                    "actions": {}
+                                }
+                            },
+                            "If_ContactId_IS_NOT_null": {
+                                "type": "If",
+                                "expression": {
+                                    "and": [
+                                        {
+                                            "not": {
+                                                "equals": [
+                                                    "@variables('ContactId')",
+                                                    ""
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                },
+                                "actions": {
+                                    "Get_Contacts_where_contactid_eq_ExporterNumber": {
+                                        "type": "ApiConnection",
+                                        "inputs": {
+                                            "host": {
+                                                "connection": {
+                                                    "referenceName": "commondataservice"
+                                                }
+                                            },
+                                            "method": "get",
+                                            "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('contacts'))}/items",
+                                            "queries": {
+                                                "$filter": "contactid eq '@{variables('ContactId')}'",
+                                                "$top": 1
+                                            }
+                                        }
+                                    }
+                                },
+                                "else": {
+                                    "actions": {}
+                                },
+                                "runAfter": {
+                                    "If_AccountId_IS_NOT_null": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            },
+                            "Mapping_Account": {
+                                "type": "If",
+                                "expression": {
+                                    "and": [
+                                        {
+                                            "not": {
+                                                "equals": [
+                                                    "@body('Get_Accounts_where_accountid_eq_ExporterNumber')?['value']",
+                                                    "@null"
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            "equals": [
+                                                "@empty(body('Get_Accounts_where_accountid_eq_ExporterNumber')?['value'])",
+                                                "@false"
+                                            ]
+                                        }
+                                    ]
+                                },
+                                "actions": {
+                                    "For_each_4": {
+                                        "type": "Foreach",
+                                        "foreach": "@body('Get_Accounts_where_accountid_eq_ExporterNumber')?['value']",
+                                        "actions": {
+                                            "Set_variable": {
+                                                "type": "SetVariable",
+                                                "inputs": {
+                                                    "name": "CustomerId",
+                                                    "value": "@items('For_each_4')?['accountid']"
+                                                }
+                                            },
+                                            "Set_variable_4": {
+                                                "type": "SetVariable",
+                                                "inputs": {
+                                                    "name": "CustomerIdType",
+                                                    "value": "accounts"
+                                                },
+                                                "runAfter": {
+                                                    "Set_variable": [
+                                                        "Succeeded"
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "else": {
+                                    "actions": {}
+                                },
+                                "runAfter": {
+                                    "If_ContactId_IS_NOT_null": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            },
+                            "Mapping_Contact": {
+                                "type": "If",
+                                "expression": {
+                                    "and": [
+                                        {
+                                            "not": {
+                                                "equals": [
+                                                    "@body('Get_Contacts_where_contactid_eq_ExporterNumber')?['value']",
+                                                    "@null"
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            "or": [
+                                                {
+                                                    "equals": [
+                                                        "@body('Get_Accounts_where_accountid_eq_ExporterNumber')?['value']",
+                                                        "@null"
+                                                    ]
+                                                },
+                                                {
+                                                    "equals": [
+                                                        "@empty(body('Get_Accounts_where_accountid_eq_ExporterNumber')?['value'])",
+                                                        "@true"
+                                                    ]
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "equals": [
+                                                "@empty(body('Get_Contacts_where_contactid_eq_ExporterNumber')?['value'])",
+                                                "@false"
+                                            ]
+                                        }
+                                    ]
+                                },
+                                "actions": {
+                                    "For_each": {
+                                        "type": "Foreach",
+                                        "foreach": "@body('Get_Contacts_where_contactid_eq_ExporterNumber')?['value']",
+                                        "actions": {
+                                            "Set_variable_12": {
+                                                "type": "SetVariable",
+                                                "inputs": {
+                                                    "name": "CustomerId",
+                                                    "value": "@items('For_each')?['contactid']"
+                                                }
+                                            },
+                                            "Set_variable_13": {
+                                                "type": "SetVariable",
+                                                "inputs": {
+                                                    "name": "CustomerIdType",
+                                                    "value": "contacts"
+                                                },
+                                                "runAfter": {
+                                                    "Set_variable_12": [
+                                                        "Succeeded"
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "else": {
+                                    "actions": {}
+                                },
+                                "runAfter": {
+                                    "If_ContactId_IS_NOT_null": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            },
+                            "Mapping_ExporterTemp": {
+                                "type": "If",
+                                "expression": {
+                                    "and": [
+                                        {
+                                            "or": [
+                                                {
+                                                    "equals": [
+                                                        "@body('Get_Accounts_where_accountid_eq_ExporterNumber')?['value']",
+                                                        "@null"
+                                                    ]
+                                                },
+                                                {
+                                                    "equals": [
+                                                        "@empty(body('Get_Accounts_where_accountid_eq_ExporterNumber')?['value'])",
+                                                        "@true"
+                                                    ]
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "or": [
+                                                {
+                                                    "equals": [
+                                                        "@body('Get_Contacts_where_contactid_eq_ExporterNumber')?['value']",
+                                                        "@null"
+                                                    ]
+                                                },
+                                                {
+                                                    "equals": [
+                                                        "@empty(body('Get_Contacts_where_contactid_eq_ExporterNumber')?['value'])",
+                                                        "@true"
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                "actions": {
+                                    "Set_variable_2": {
+                                        "type": "SetVariable",
+                                        "inputs": {
+                                            "name": "CustomerId",
+                                            "value": "3aad1982-5bb9-ea11-a812-000d3a20caa3"
+                                        }
+                                    },
+                                    "Set_variable_14": {
+                                        "type": "SetVariable",
+                                        "inputs": {
+                                            "name": "CustomerIdType",
+                                            "value": "accounts"
+                                        },
+                                        "runAfter": {
+                                            "Set_variable_2": [
+                                                "Succeeded"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "else": {
+                                    "actions": {}
+                                },
+                                "runAfter": {
+                                    "Mapping_Account": [
+                                        "Succeeded"
+                                    ],
+                                    "Mapping_Contact": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            }
+                        },
+                        "runAfter": {
+                            "Map_Casetype2_for_PS_and_SD": [
+                                "Succeeded"
+                            ]
+                        }
+                    },
+                    "Document": {
+                        "type": "Scope",
+                        "actions": {
+                            "List_records_3": {
+                                "type": "ApiConnection",
+                                "inputs": {
+                                    "host": {
+                                        "connection": {
+                                            "referenceName": "commondataservice"
+                                        }
+                                    },
+                                    "method": "get",
+                                    "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_documents'))}/items",
+                                    "queries": {
+                                        "$filter": "mmofe_documentnumber eq '@{variables('DocumentNumber')}'",
+                                        "$top": 1
+                                    }
+                                }
+                            },
+                            "Condition_2": {
+                                "type": "If",
+                                "expression": {
+                                    "and": [
+                                        {
+                                            "equals": [
+                                                "@length(body('List_records_3')?['value'])",
+                                                0
+                                            ]
+                                        }
+                                    ]
+                                },
+                                "actions": {
+                                    "Create_a_new_record": {
+                                        "type": "ApiConnection",
+                                        "inputs": {
+                                            "host": {
+                                                "connection": {
+                                                    "referenceName": "commondataservice"
+                                                }
+                                            },
+                                            "method": "post",
+                                            "body": {
+                                                "mmofe_documentnumber": "@variables('DocumentNumber')",
+                                                "_mmofe_customerid_value": "@variables('CustomerId')",
+                                                "_mmofe_customerid_type": "@{variables('CustomerIdType')}",
+                                                "mmofe_correlationid": "@variables('CorrelationId')",
+                                                "mmofe_documentdate": "@{formatDateTime(variables('DocumentDate'),'yyyy-MM-ddTHH:mm:ss')}",
+                                                "mmofe_name": "@variables('DocumentNumber')",
+                                                "mmofe_documenturl": "@variables('DocumentUrl')",
+                                                "mmofe_integrationpayload": "@{variables('Payload')}",
+                                                "mmofe_personresponsible": "@{if(contains(variables('Payload'), 'exporter'), if(contains(variables('Payload')['exporter'], 'fullName'), variables('Payload')['exporter']['fullName'], if(contains(variables('Payload'), 'personResponsible'), variables('Payload')['personResponsible'], null)), null)}",
+                                                "mmofe_processstatus": 961040000,
+                                                "statuscode": "@if(contains(variables('Payload'), 'caseType2'), if(contains(variables('Payload')['caseType2'], 'Void by an Exporter'), 961040000, if(contains(variables('Payload')['caseType2'], 'Void by SMO/PMO'), 961040001, 1)), null)"
+                                            },
+                                            "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_documents'))}/items"
+                                        },
+                                        "trackedProperties": {
+                                            "correlationId": "@variables('CorrelationId')",
+                                            "documentNumber": "@variables('DocumentNumber')",
+                                            "stage": "document-case-creation",
+                                            "entity": "document",
+                                            "entityAction": "create"
+                                        }
+                                    },
+                                    "Set_variable_5": {
+                                        "type": "SetVariable",
+                                        "inputs": {
+                                            "name": "DocumentId",
+                                            "value": "@body('Create_a_new_record')?['mmofe_documentid']"
+                                        },
+                                        "runAfter": {
+                                            "Create_a_new_record": [
+                                                "Succeeded"
+                                            ]
+                                        }
+                                    },
+                                    "Check_Landings_and_Catches": {
+                                        "type": "If",
+                                        "expression": {
+                                            "or": [
+                                                {
+                                                    "greaterOrEquals": [
+                                                        "@length(variables('Landings'))",
+                                                        1
+                                                    ]
+                                                },
+                                                {
+                                                    "greaterOrEquals": [
+                                                        "@length(variables('CatchesProductsArray'))",
+                                                        1
+                                                    ]
+                                                }
+                                            ]
+                                        },
+                                        "actions": {
+                                            "Create_Case": {
+                                                "type": "ApiConnection",
+                                                "inputs": {
+                                                    "host": {
+                                                        "connection": {
+                                                            "referenceName": "commondataservice"
+                                                        }
+                                                    },
+                                                    "method": "post",
+                                                    "body": {
+                                                        "title": "@variables('DocumentNumber')",
+                                                        "_mmofe_casetype1_value": "@variables('CaseTypeId')",
+                                                        "_mmofe_casetype2_value": "@{if(greater(length(variables('CaseTypeId2')),0),variables('CaseTypeId2'),null)}",
+                                                        "_mmofe_documentid_value": "@variables('DocumentId')",
+                                                        "_customerid_value": "@variables('CustomerId')",
+                                                        "_customerid_type": "@variables('CustomerIdType')",
+                                                        "mmofe_approvalconfirmed": false,
+                                                        "mmofe_approvaltoproceed": false,
+                                                        "mmofe_caseriskatsubmission": "@if(contains(variables('Payload'), 'caseRiskAtSubmission'), variables('Payload')['caseRiskAtSubmission'], null)",
+                                                        "mmofe_casetoberesolved": false,
+                                                        "mmofe_ccdirectlanding": "@if(contains(variables('Payload'), 'isDirectLanding'), variables('Payload')['isDirectLanding'], false)",
+                                                        "mmofe_companyname": "@{if(contains(variables('Exporter'),'companyName'), variables('Exporter')['companyName'],'')}",
+                                                        "mmofe_correlationid": "@variables('CorrelationId')",
+                                                        "mmofe_documentnumber": "@variables('DocumentNumber')",
+                                                        "mmofe_exportdestinationcountry": "@{if(contains(variables('Payload'), 'exportedTo'), if(contains(variables('Payload')['exportedTo'], 'officialCountryName'), variables('Payload')['exportedTo']['officialCountryName'], null), null)}",
+                                                        "mmofe_failureirrespectiveofrisk": "@if(contains(variables('Payload'), 'failureIrrespectiveOfRisk'), variables('Payload')['failureIrrespectiveOfRisk'], false)",
+                                                        "mmofe_integrationpayload": "@{variables('Payload')}",
+                                                        "mmofe_iteration": "@variables('Iteration')",
+                                                        "mmofe_landingscloned": "@if(contains(variables('Payload'), 'landingsCloned'), variables('Payload')['landingsCloned'], null)",
+                                                        "mmofe_numberoffailedsubmissions": "@variables('NumberOfFailedSubmissions')",
+                                                        "mmofe_documentvoid": "@if(contains(variables('Payload'), 'parentDocumentVoid'), variables('Payload')['parentDocumentVoid'], null)",
+                                                        "mmofe_daylimitreached": false,
+                                                        "mmofe_speciesmanuallyoverridden": "@if(contains(variables('Payload'), 'speciesOverriddenByAdmin'), variables('Payload')['speciesOverriddenByAdmin'], false)",
+                                                        "mmofe_caseoutcomeatsubmission": "@if(contains(variables('Payload'), 'caseOutcomeAtSubmission'), if(contains(variables('Payload')['caseOutcomeAtSubmission'], 'Issued'), 961040000, if(contains(variables('Payload')['caseOutcomeAtSubmission'], 'Rejected'), 961040001, 1)), null)",
+                                                        "mmofe_totalnooflandings": "@length(variables('Landings'))",
+                                                        "mmofe_unblocked": "@if(contains(variables('Payload'), 'isUnblocked'), variables('Payload')['isUnblocked'], false)",
+                                                        "mmofe_unblockedaudit": "@{if(contains(variables('Payload'), 'audits'), variables('Payload')['audits'], null)}",
+                                                        "mmofe_vesselmanuallyoverridden": "@if(contains(variables('Payload'), 'vesselOverriddenByAdmin'), variables('Payload')['vesselOverriddenByAdmin'], false)",
+                                                        "_mmofe_clonedfrom_value": "@variables('CloneDocId')",
+                                                        "_mmofe_devolvedadministrationid_value": "@variables('DevolvedAdministrationId')",
+                                                        "_mmofe_casestatusatsubmission_value": "@{if(greater(length(variables('CaseStatusAtSubmission')),0),variables('CaseStatusAtSubmission'),null)}"
+                                                    },
+                                                    "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('incidents'))}/items"
+                                                },
+                                                "trackedProperties": {
+                                                    "correlationId": "@variables('CorrelationId')",
+                                                    "documentNumber": "@variables('DocumentNumber')",
+                                                    "stage": "document-case-creation",
+                                                    "entity": "case",
+                                                    "entityAction": "create-new-document"
+                                                }
+                                            },
+                                            "Set_variable_9": {
+                                                "type": "SetVariable",
+                                                "inputs": {
+                                                    "name": "CaseId",
+                                                    "value": "@body('Create_Case')?['incidentid']"
+                                                },
+                                                "runAfter": {
+                                                    "Create_Case": [
+                                                        "Succeeded"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "else": {
+                                            "actions": {}
+                                        },
+                                        "runAfter": {
+                                            "Set_variable_5": [
+                                                "Succeeded"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "else": {
+                                    "actions": {
+                                        "For_each_7": {
+                                            "type": "Foreach",
+                                            "foreach": "@body('List_records_3')?['value']",
+                                            "actions": {
+                                                "Condition": {
+                                                    "type": "If",
+                                                    "expression": {
+                                                        "or": [
+                                                            {
+                                                                "equals": [
+                                                                    "@items('For_each_7')?['mmofe_processstatus']",
+                                                                    961040001
+                                                                ]
+                                                            },
+                                                            {
+                                                                "equals": [
+                                                                    "@items('For_each_7')?['mmofe_processstatus']",
+                                                                    961040000
+                                                                ]
+                                                            },
+                                                            {
+                                                                "equals": [
+                                                                    "@items('For_each_7')?['mmofe_processstatus']",
+                                                                    "@null"
+                                                                ]
+                                                            }
+                                                        ]
+                                                    },
+                                                    "actions": {
+                                                        "Set_variable_6": {
+                                                            "type": "SetVariable",
+                                                            "inputs": {
+                                                                "name": "DocumentId",
+                                                                "value": "@items('For_each_7')?['mmofe_documentid']"
+                                                            }
+                                                        },
+                                                        "Status_Reason": {
+                                                            "type": "Compose",
+                                                            "inputs": "@body('List_records_3')?['value'][0]['statuscode']",
+                                                            "runAfter": {
+                                                                "Set_variable_6": [
+                                                                    "Succeeded"
+                                                                ]
+                                                            }
+                                                        },
+                                                        "Update_a_record_2": {
+                                                            "type": "ApiConnection",
+                                                            "inputs": {
+                                                                "host": {
+                                                                    "connection": {
+                                                                        "referenceName": "commondataservice"
+                                                                    }
+                                                                },
+                                                                "method": "patch",
+                                                                "body": {
+                                                                    "mmofe_documenturl": "@{if(equals(variables('DocumentUrl'),''),body('List_records_3')?['value'][0]['mmofe_documenturl'],variables('DocumentUrl'))}",
+                                                                    "mmofe_integrationpayload": "@{string(variables('Payload'))}",
+                                                                    "statuscode": "@if(contains(variables('Payload'), 'caseType2'), if(contains(variables('Payload')['caseType2'], 'Void by an Exporter'), 961040000, if(contains(variables('Payload')['caseType2'], 'Void by SMO/PMO'), 961040001, 1)), outputs('Status_Reason'))",
+                                                                    "_ownerid_type": ""
+                                                                },
+                                                                "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_documents'))}/items/@{encodeURIComponent(encodeURIComponent(items('For_each_7')?['mmofe_documentid']))}"
+                                                            },
+                                                            "runAfter": {
+                                                                "Status_Reason": [
+                                                                    "Succeeded"
+                                                                ]
+                                                            },
+                                                            "trackedProperties": {
+                                                                "correlationId": "@variables('CorrelationId')",
+                                                                "documentNumber": "@variables('DocumentNumber')",
+                                                                "stage": "document-case-creation",
+                                                                "entity": "document",
+                                                                "entityAction": "update"
+                                                            }
+                                                        },
+                                                        "Get_Case": {
+                                                            "type": "ApiConnection",
+                                                            "inputs": {
+                                                                "host": {
+                                                                    "connection": {
+                                                                        "referenceName": "commondataservice"
+                                                                    }
+                                                                },
+                                                                "method": "get",
+                                                                "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('incidents'))}/items",
+                                                                "queries": {
+                                                                    "$filter": "_mmofe_documentid_value eq '@{variables('DocumentId')}'",
+                                                                    "$orderby": "createdon desc",
+                                                                    "$top": 1
+                                                                }
+                                                            },
+                                                            "runAfter": {
+                                                                "Update_a_record_2": [
+                                                                    "Succeeded",
+                                                                    "Failed"
+                                                                ]
+                                                            }
+                                                        },
+                                                        "Check_Case_Length": {
+                                                            "type": "If",
+                                                            "expression": {
+                                                                "and": [
+                                                                    {
+                                                                        "equals": [
+                                                                            "@length(body('Get_Case')?['value'])",
+                                                                            0
+                                                                        ]
+                                                                    }
+                                                                ]
+                                                            },
+                                                            "actions": {
+                                                                "Check_Landing_or_Catches": {
+                                                                    "type": "If",
+                                                                    "expression": {
+                                                                        "or": [
+                                                                            {
+                                                                                "greaterOrEquals": [
+                                                                                    "@length(variables('Landings'))",
+                                                                                    1
+                                                                                ]
+                                                                            },
+                                                                            {
+                                                                                "greaterOrEquals": [
+                                                                                    "@length(variables('CatchesProductsArray'))",
+                                                                                    1
+                                                                                ]
+                                                                            }
+                                                                        ]
+                                                                    },
+                                                                    "actions": {
+                                                                        "Create_Case_3": {
+                                                                            "type": "ApiConnection",
+                                                                            "inputs": {
+                                                                                "host": {
+                                                                                    "connection": {
+                                                                                        "referenceName": "commondataservice"
+                                                                                    }
+                                                                                },
+                                                                                "method": "post",
+                                                                                "body": {
+                                                                                    "title": "@variables('DocumentNumber')",
+                                                                                    "_mmofe_casetype1_value": "@variables('CaseTypeId')",
+                                                                                    "_mmofe_casetype2_value": "@{if(greater(length(variables('CaseTypeId2')),0),variables('CaseTypeId2'),null)}",
+                                                                                    "_mmofe_documentid_value": "@variables('DocumentId')",
+                                                                                    "_customerid_value": "@variables('CustomerId')",
+                                                                                    "_customerid_type": "@variables('CustomerIdType')",
+                                                                                    "mmofe_approvalconfirmed": false,
+                                                                                    "mmofe_approvaltoproceed": false,
+                                                                                    "mmofe_caseriskatsubmission": "@if(contains(variables('Payload'), 'caseRiskAtSubmission'), variables('Payload')['caseRiskAtSubmission'], null)",
+                                                                                    "mmofe_casetoberesolved": false,
+                                                                                    "mmofe_ccdirectlanding": "@if(contains(variables('Payload'), 'isDirectLanding'), variables('Payload')['isDirectLanding'], false)",
+                                                                                    "mmofe_companyname": "@{if(contains(variables('Exporter'),'companyName'), variables('Exporter')['companyName'],'')}",
+                                                                                    "mmofe_correlationid": "@variables('CorrelationId')",
+                                                                                    "mmofe_documentnumber": "@variables('DocumentNumber')",
+                                                                                    "mmofe_exportdestinationcountry": "@{if(contains(variables('Payload'), 'exportedTo'), if(contains(variables('Payload')['exportedTo'], 'officialCountryName'), variables('Payload')['exportedTo']['officialCountryName'], null), null)}",
+                                                                                    "mmofe_failureirrespectiveofrisk": "@if(contains(variables('Payload'), 'failureIrrespectiveOfRisk'), variables('Payload')['failureIrrespectiveOfRisk'], false)",
+                                                                                    "mmofe_integrationpayload": "@{variables('Payload')}",
+                                                                                    "mmofe_iteration": "@variables('Iteration')",
+                                                                                    "mmofe_landingscloned": "@if(contains(variables('Payload'), 'landingsCloned'), variables('Payload')['landingsCloned'], null)",
+                                                                                    "mmofe_numberoffailedsubmissions": "@variables('NumberOfFailedSubmissions')",
+                                                                                    "mmofe_documentvoid": "@if(contains(variables('Payload'), 'parentDocumentVoid'), variables('Payload')['parentDocumentVoid'], null)",
+                                                                                    "mmofe_daylimitreached": false,
+                                                                                    "mmofe_speciesmanuallyoverridden": "@if(contains(variables('Payload'), 'speciesOverriddenByAdmin'), variables('Payload')['speciesOverriddenByAdmin'], false)",
+                                                                                    "mmofe_caseoutcomeatsubmission": "@if(contains(variables('Payload'), 'caseOutcomeAtSubmission'), if(contains(variables('Payload')['caseOutcomeAtSubmission'], 'Issued'), 961040000, if(contains(variables('Payload')['caseOutcomeAtSubmission'], 'Rejected'), 961040001, 1)), null)",
+                                                                                    "mmofe_totalnooflandings": "@length(variables('Landings'))",
+                                                                                    "mmofe_unblocked": "@if(contains(variables('Payload'), 'isUnblocked'), variables('Payload')['isUnblocked'], false)",
+                                                                                    "mmofe_unblockedaudit": "@{if(contains(variables('Payload'), 'audits'), variables('Payload')['audits'], null)}",
+                                                                                    "mmofe_vesselmanuallyoverridden": "@if(contains(variables('Payload'), 'vesselOverriddenByAdmin'), variables('Payload')['vesselOverriddenByAdmin'], false)",
+                                                                                    "_mmofe_clonedfrom_value": "@variables('CloneDocId')",
+                                                                                    "_mmofe_devolvedadministrationid_value": "@variables('DevolvedAdministrationId')",
+                                                                                    "_mmofe_casestatusatsubmission_value": "@{if(greater(length(variables('CaseStatusAtSubmission')),0),variables('CaseStatusAtSubmission'),null)}"
+                                                                                },
+                                                                                "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('incidents'))}/items"
+                                                                            },
+                                                                            "trackedProperties": {
+                                                                                "correlationId": "@variables('CorrelationId')",
+                                                                                "documentNumber": "@variables('DocumentNumber')",
+                                                                                "stage": "document-case-creation",
+                                                                                "entity": "case",
+                                                                                "entityAction": "create-existing-document"
+                                                                            }
+                                                                        },
+                                                                        "Set_Case_Id_3": {
+                                                                            "type": "SetVariable",
+                                                                            "inputs": {
+                                                                                "name": "CaseId",
+                                                                                "value": "@body('Create_Case_3')?['incidentid']"
+                                                                            },
+                                                                            "runAfter": {
+                                                                                "Create_Case_3": [
+                                                                                    "Succeeded",
+                                                                                    "Failed"
+                                                                                ]
+                                                                            }
+                                                                        }
+                                                                    },
+                                                                    "else": {
+                                                                        "actions": {}
+                                                                    }
+                                                                }
+                                                            },
+                                                            "else": {
+                                                                "actions": {
+                                                                    "For_each_6": {
+                                                                        "type": "Foreach",
+                                                                        "foreach": "@body('Get_Case')?['value']",
+                                                                        "actions": {
+                                                                            "Check_Case_Type_2": {
+                                                                                "type": "If",
+                                                                                "expression": {
+                                                                                    "and": [
+                                                                                        {
+                                                                                            "equals": [
+                                                                                                "@items('For_each_6')?['mmofe_caseoutcomeatsubmission']",
+                                                                                                961040001
+                                                                                            ]
+                                                                                        },
+                                                                                        {
+                                                                                            "contains": [
+                                                                                                "@variables('Payload')",
+                                                                                                "documentNumber"
+                                                                                            ]
+                                                                                        }
+                                                                                    ]
+                                                                                },
+                                                                                "actions": {
+                                                                                    "Create_Case_2": {
+                                                                                        "type": "ApiConnection",
+                                                                                        "inputs": {
+                                                                                            "host": {
+                                                                                                "connection": {
+                                                                                                    "referenceName": "commondataservice"
+                                                                                                }
+                                                                                            },
+                                                                                            "method": "post",
+                                                                                            "body": {
+                                                                                                "title": "@variables('DocumentNumber')",
+                                                                                                "_mmofe_casetype1_value": "@variables('CaseTypeId')",
+                                                                                                "_mmofe_casetype2_value": "@{if(greater(length(variables('CaseTypeId2')),0),variables('CaseTypeId2'),null)}",
+                                                                                                "_mmofe_documentid_value": "@variables('DocumentId')",
+                                                                                                "_customerid_value": "@variables('CustomerId')",
+                                                                                                "_customerid_type": "@variables('CustomerIdType')",
+                                                                                                "mmofe_approvalconfirmed": false,
+                                                                                                "mmofe_approvaltoproceed": false,
+                                                                                                "mmofe_caseriskatsubmission": "@if(contains(variables('Payload'), 'caseRiskAtSubmission'), variables('Payload')['caseRiskAtSubmission'], null)",
+                                                                                                "mmofe_casetoberesolved": false,
+                                                                                                "mmofe_ccdirectlanding": "@if(contains(variables('Payload'), 'isDirectLanding'), variables('Payload')['isDirectLanding'], false)",
+                                                                                                "mmofe_companyname": "@{if(contains(variables('Exporter'),'companyName'), variables('Exporter')['companyName'],'')}",
+                                                                                                "mmofe_correlationid": "@variables('CorrelationId')",
+                                                                                                "mmofe_documentnumber": "@variables('DocumentNumber')",
+                                                                                                "mmofe_exportdestinationcountry": "@{if(contains(variables('Payload'), 'exportedTo'), if(contains(variables('Payload')['exportedTo'], 'officialCountryName'), variables('Payload')['exportedTo']['officialCountryName'], null), null)}",
+                                                                                                "mmofe_failureirrespectiveofrisk": "@if(contains(variables('Payload'), 'failureIrrespectiveOfRisk'), variables('Payload')['failureIrrespectiveOfRisk'], false)",
+                                                                                                "mmofe_integrationpayload": "@{variables('Payload')}",
+                                                                                                "mmofe_iteration": "@variables('Iteration')",
+                                                                                                "mmofe_landingscloned": "@if(contains(variables('Payload'), 'landingsCloned'), variables('Payload')['landingsCloned'], null)",
+                                                                                                "mmofe_numberoffailedsubmissions": "@variables('NumberOfFailedSubmissions')",
+                                                                                                "mmofe_documentvoid": "@if(contains(variables('Payload'), 'parentDocumentVoid'), variables('Payload')['parentDocumentVoid'], null)",
+                                                                                                "mmofe_daylimitreached": false,
+                                                                                                "mmofe_speciesmanuallyoverridden": "@if(contains(variables('Payload'), 'speciesOverriddenByAdmin'), variables('Payload')['speciesOverriddenByAdmin'], false)",
+                                                                                                "mmofe_caseoutcomeatsubmission": "@if(contains(variables('Payload'), 'caseOutcomeAtSubmission'), if(contains(variables('Payload')['caseOutcomeAtSubmission'], 'Issued'), 961040000, if(contains(variables('Payload')['caseOutcomeAtSubmission'], 'Rejected'), 961040001, 1)), null)",
+                                                                                                "mmofe_totalnooflandings": "@length(variables('Landings'))",
+                                                                                                "mmofe_unblocked": "@if(contains(variables('Payload'), 'isUnblocked'), variables('Payload')['isUnblocked'], false)",
+                                                                                                "mmofe_unblockedaudit": "@{if(contains(variables('Payload'), 'audits'), variables('Payload')['audits'], null)}",
+                                                                                                "mmofe_vesselmanuallyoverridden": "@if(contains(variables('Payload'), 'vesselOverriddenByAdmin'), variables('Payload')['vesselOverriddenByAdmin'], false)",
+                                                                                                "_mmofe_clonedfrom_value": "@variables('CloneDocId')",
+                                                                                                "_mmofe_devolvedadministrationid_value": "@variables('DevolvedAdministrationId')",
+                                                                                                "_mmofe_casestatusatsubmission_value": "@{if(greater(length(variables('CaseStatusAtSubmission')),0),variables('CaseStatusAtSubmission'),null)}"
+                                                                                            },
+                                                                                            "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('incidents'))}/items"
+                                                                                        },
+                                                                                        "trackedProperties": {
+                                                                                            "correlationId": "@variables('CorrelationId')",
+                                                                                            "documentNumber": "@variables('DocumentNumber')",
+                                                                                            "stage": "document-case-creation",
+                                                                                            "entity": "case",
+                                                                                            "entityAction": "create-resubmission"
+                                                                                        }
+                                                                                    },
+                                                                                    "Set_Case_Id_2": {
+                                                                                        "type": "SetVariable",
+                                                                                        "inputs": {
+                                                                                            "name": "CaseId",
+                                                                                            "value": "@body('Create_Case_2')?['incidentid']"
+                                                                                        },
+                                                                                        "runAfter": {
+                                                                                            "Create_Case_2": [
+                                                                                                "Succeeded"
+                                                                                            ]
+                                                                                        }
+                                                                                    }
+                                                                                },
+                                                                                "else": {
+                                                                                    "actions": {
+                                                                                        "CaseId": {
+                                                                                            "type": "SetVariable",
+                                                                                            "inputs": {
+                                                                                                "name": "CaseId",
+                                                                                                "value": "@items('For_each_6')?['incidentid']"
+                                                                                            }
+                                                                                        }
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            },
+                                                            "runAfter": {
+                                                                "Get_Case": [
+                                                                    "Succeeded"
+                                                                ]
+                                                            }
+                                                        }
+                                                    },
+                                                    "else": {
+                                                        "actions": {
+                                                            "Set_variable_17": {
+                                                                "type": "SetVariable",
+                                                                "inputs": {
+                                                                    "name": "Terminate",
+                                                                    "value": "@bool(true)"
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "Check_to_terminate": {
+                                            "type": "If",
+                                            "expression": {
+                                                "and": [
+                                                    {
+                                                        "equals": [
+                                                            "@variables('Terminate')",
+                                                            "@bool(true)"
+                                                        ]
+                                                    }
+                                                ]
+                                            },
+                                            "actions": {
+                                                "Terminate": {
+                                                    "type": "Terminate",
+                                                    "inputs": {
+                                                        "runStatus": "Succeeded"
+                                                    }
+                                                }
+                                            },
+                                            "else": {
+                                                "actions": {}
+                                            },
+                                            "runAfter": {
+                                                "For_each_7": [
+                                                    "Succeeded"
+                                                ]
+                                            }
+                                        }
+                                    }
+                                },
+                                "runAfter": {
+                                    "List_records_3": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            }
+                        },
+                        "runAfter": {
+                            "Create_or_Retrieve_Exporter_and_Set_CustomerId": [
+                                "Succeeded"
+                            ],
+                            "Retrieve_Case_Types_and_Set_CaseStatusAtSubmission": [
+                                "Succeeded"
+                            ],
+                            "Retrieve_Case_Types_and_Set_CaseTypeId": [
+                                "Succeeded"
+                            ],
+                            "Retrieve_Case_Types_and_Set_CaseTypeId2": [
+                                "Succeeded"
+                            ],
+                            "Retrieve_Devolved_Administration_and_Set_DevolvedAdministrationId": [
+                                "Succeeded"
+                            ]
+                        }
+                    },
+                    "Build_Handoff_Message": {
+                        "type": "Compose",
+                        "description": "Versioned hand-off envelope published to document-case-queue for the downstream landings/catches stage.",
+                        "inputs": {
+                            "schemaVersion": "1.0",
+                            "messageType": "DocumentCaseCreated",
+                            "stage": "document-case-creation",
+                            "correlationId": "@variables('CorrelationId')",
+                            "documentNumber": "@variables('DocumentNumber')",
+                            "idempotencyKey": "@{variables('DocumentNumber')}-@{string(variables('Iteration'))}",
+                            "documentId": "@variables('DocumentId')",
+                            "caseId": "@variables('CaseId')",
+                            "payload": "@variables('Payload')"
+                        },
+                        "runAfter": {
+                            "Document": [
+                                "Succeeded"
+                            ]
+                        }
+                    },
+                    "Publish_to_document-case-queue": {
+                        "type": "ApiConnection",
+                        "description": "Send the document/case hand-off envelope to the next stage. Session id is the document number so per-document ordering is preserved downstream.",
+                        "inputs": {
+                            "host": {
+                                "connection": {
+                                    "referenceName": "servicebus"
+                                }
+                            },
+                            "method": "post",
+                            "path": "/@{encodeURIComponent(encodeURIComponent('document-case-queue'))}/messages",
+                            "body": {
+                                "ContentData": "@{base64(string(outputs('Build_Handoff_Message')))}",
+                                "ContentType": "application/json",
+                                "CorrelationId": "@variables('CorrelationId')",
+                                "SessionId": "@variables('DocumentNumber')",
+                                "Properties": {
+                                    "correlationId": "@variables('CorrelationId')",
+                                    "documentNumber": "@variables('DocumentNumber')",
+                                    "stage": "document-case-creation",
+                                    "messageType": "DocumentCaseCreated"
+                                }
+                            }
+                        },
+                        "runAfter": {
+                            "Build_Handoff_Message": [
+                                "Succeeded"
+                            ]
+                        },
+                        "trackedProperties": {
+                            "correlationId": "@variables('CorrelationId')",
+                            "documentNumber": "@variables('DocumentNumber')",
+                            "documentId": "@variables('DocumentId')",
+                            "caseId": "@variables('CaseId')",
+                            "stage": "document-case-creation",
+                            "messageAction": "handoff"
+                        }
+                    },
+                    "Complete_the_message_in_a_queue": {
+                        "type": "ApiConnection",
+                        "description": "Settle the source message only after the hand-off has been published successfully.",
+                        "inputs": {
+                            "host": {
+                                "connection": {
+                                    "referenceName": "servicebus"
+                                }
+                            },
+                            "method": "delete",
+                            "path": "/@{encodeURIComponent(encodeURIComponent('mmo-ecc-dyn-req-queue'))}/messages/complete",
+                            "queries": {
+                                "lockToken": "@triggerBody()?['LockToken']",
+                                "queueType": "Main",
+                                "sessionId": "@triggerBody()?['SessionId']"
+                            }
+                        },
+                        "runAfter": {
+                            "Publish_to_document-case-queue": [
+                                "Succeeded"
+                            ]
+                        },
+                        "trackedProperties": {
+                            "correlationId": "@variables('CorrelationId')",
+                            "documentNumber": "@variables('DocumentNumber')",
+                            "stage": "document-case-creation",
+                            "messageAction": "complete"
+                        }
+                    }
+                },
+                "runAfter": {
+                    "Initialize_Temination": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Handle_Failure": {
+                "type": "Scope",
+                "description": "Error handler. On any failure in the document/case stage or hand-off, abandon the source message so Service Bus can redeliver it (native retry, max delivery count 5; auto dead-letters afterwards).",
+                "actions": {
+                    "Log_Failure": {
+                        "type": "Compose",
+                        "inputs": {
+                            "correlationId": "@variables('CorrelationId')",
+                            "documentNumber": "@variables('DocumentNumber')",
+                            "stage": "document-case-creation",
+                            "outcome": "failed",
+                            "messageAction": "abandon",
+                            "result": "@result('Process_Document_Case_And_Handoff')"
+                        },
+                        "runAfter": {}
+                    },
+                    "Abandon_the_message_in_a_queue": {
+                        "type": "ApiConnection",
+                        "inputs": {
+                            "host": {
+                                "connection": {
+                                    "referenceName": "servicebus"
+                                }
+                            },
+                            "method": "post",
+                            "path": "/@{encodeURIComponent(encodeURIComponent('mmo-ecc-dyn-req-queue'))}/messages/abandon",
+                            "queries": {
+                                "lockToken": "@triggerBody()?['LockToken']",
+                                "queueType": "Main",
+                                "sessionId": "@triggerBody()?['SessionId']"
+                            }
+                        },
+                        "runAfter": {
+                            "Log_Failure": [
+                                "Succeeded"
+                            ]
+                        },
+                        "trackedProperties": {
+                            "correlationId": "@variables('CorrelationId')",
+                            "documentNumber": "@variables('DocumentNumber')",
+                            "stage": "document-case-creation",
+                            "messageAction": "abandon"
+                        }
+                    }
+                },
+                "runAfter": {
+                    "Process_Document_Case_And_Handoff": [
+                        "Failed",
+                        "TimedOut",
+                        "Aborted"
+                    ]
+                }
+            }
+        },
+        "outputs": {}
+    },
+    "kind": "Stateful"
+}
