@@ -1,9 +1,5 @@
-mmo-ecc-dyn-processor-refdata-workflow/.vscode
-mmo-ecc-dyn-processor-workflow/.vscode
-mmo-ecc-dyn-processor-workflow/workflow-designtime
 eutd-mmo-fes-logic-apps-workspace.code-workspace
-mmo-ecc-dyn-processor-refdata-workflow/workflow-designtime
 .azurite
-mmo-fes-processor/workflow-designtime
-mmo-fes-processor-document-case-creation/.vscode
-mmo-fes-processor-document-case-creation/workflow-designtime
+.vscode
+**/.vscode
+**/workflow-designtime
