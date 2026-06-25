@@ -14,3 +14,4 @@ eutd-mmo-fes-logic-apps-workspace.code-workspace
 mmo-ecc-dyn-processor-refdata-workflow/workflow-designtime/host.json
 mmo-ecc-dyn-processor-refdata-workflow/workflow-designtime/local.settings.json
 .azurite
+mmo-fes-processor/workflow-designtime
