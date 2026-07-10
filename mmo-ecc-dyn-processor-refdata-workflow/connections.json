@@ -16,7 +16,7 @@
         },
         "refDataTable": {
             "api": {
-                "id": "/subscriptions/@{appsetting('WORKFLOWS_SUBSCRIPTION_ID')}/providers/Microsoft.Web/locations/@{appsetting('RESOURCEGROUP_LOCATION')}/managedApis/refDataTable"
+                "id": "/subscriptions/@{appsetting('WORKFLOWS_SUBSCRIPTION_ID')}/providers/Microsoft.Web/locations/@{appsetting('RESOURCEGROUP_LOCATION')}/managedApis/azuretables"
             },
             "authentication": {
                 "type": "ManagedServiceIdentity",

@@ -1034,7 +1034,8 @@
                                             },
                                             "authentication": {
                                                 "audience": "https://storage.azure.com",
-                                                "type": "ManagedServiceIdentity"
+                                                "type": "ManagedServiceIdentity",
+                                                "identity": "@appsetting('MANAGED_IDENTITY_RESOURCE_ID')"
                                             },
                                             "retryPolicy": {
                                                 "type": "exponential",
@@ -1063,7 +1064,8 @@
                                             },
                                             "authentication": {
                                                 "audience": "https://storage.azure.com",
-                                                "type": "ManagedServiceIdentity"
+                                                "type": "ManagedServiceIdentity",
+                                                "identity": "@appsetting('MANAGED_IDENTITY_RESOURCE_ID')"
                                             },
                                             "path": "/Tables/@{encodeURIComponent('mmorefdata')}/entities(PartitionKey='@{encodeURIComponent('Presentation')}',RowKey='@{encodeURIComponent(items('For_each_3')['presentation'])}')",
                                             "retryPolicy": {
@@ -1089,7 +1091,8 @@
                                             },
                                             "authentication": {
                                                 "audience": "https://storage.azure.com",
-                                                "type": "ManagedServiceIdentity"
+                                                "type": "ManagedServiceIdentity",
+                                                "identity": "@appsetting('MANAGED_IDENTITY_RESOURCE_ID')"
                                             },
                                             "retryPolicy": {
                                                 "type": "exponential",
@@ -1109,7 +1112,8 @@
                                             },
                                             "authentication": {
                                                 "audience": "https://storage.azure.com",
-                                                "type": "ManagedServiceIdentity"
+                                                "type": "ManagedServiceIdentity",
+                                                "identity": "@appsetting('MANAGED_IDENTITY_RESOURCE_ID')"
                                             },
                                             "retryPolicy": {
                                                 "type": "exponential",
@@ -2610,7 +2614,8 @@
                             },
                             "authentication": {
                                 "audience": "https://storage.azure.com",
-                                "type": "ManagedServiceIdentity"
+                                "type": "ManagedServiceIdentity",
+                                "identity": "@appsetting('MANAGED_IDENTITY_RESOURCE_ID')"
                             },
                             "retryPolicy": {
                                 "type": "exponential",
@@ -2683,7 +2688,8 @@
                             },
                             "authentication": {
                                 "audience": "https://storage.azure.com",
-                                "type": "ManagedServiceIdentity"
+                                "type": "ManagedServiceIdentity",
+                                "identity": "@appsetting('MANAGED_IDENTITY_RESOURCE_ID')"
                             },
                             "retryPolicy": {
                                 "type": "exponential",
@@ -2748,7 +2754,8 @@
                             },
                             "authentication": {
                                 "audience": "https://storage.azure.com",
-                                "type": "ManagedServiceIdentity"
+                                "type": "ManagedServiceIdentity",
+                                "identity": "@appsetting('MANAGED_IDENTITY_RESOURCE_ID')"
                             },
                             "retryPolicy": {
                                 "type": "exponential",
@@ -2813,7 +2820,8 @@
                             },
                             "authentication": {
                                 "audience": "https://storage.azure.com",
-                                "type": "ManagedServiceIdentity"
+                                "type": "ManagedServiceIdentity",
+                                "identity": "@appsetting('MANAGED_IDENTITY_RESOURCE_ID')"
                             },
                             "retryPolicy": {
                                 "type": "exponential",
