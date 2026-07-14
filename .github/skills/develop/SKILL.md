@@ -1,6 +1,10 @@
 ---
 name: develop
 description: 'Expert Azure Logic Apps (Standard) developer for MMO FES. Use when: implementing workflows, modifying actions/triggers, configuring connectors, adding parameters, troubleshooting workflow runs, using VS Code Logic Apps extension, debugging locally, deploying to Azure.'
+license: OGL-UK-3.0
+metadata:
+  author: mmo-fes
+  version: "1.0"
 ---
 
 # Logic Apps — Developer Skill
