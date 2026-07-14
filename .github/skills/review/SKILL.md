@@ -1,6 +1,10 @@
 ---
 name: review
 description: 'Expert reviewer for Azure Logic Apps (Standard) workflows. Use when: reviewing workflow definitions, auditing connections and parameters, checking security posture, validating error handling, assessing best practice compliance, reviewing VS Code Logic Apps extension configuration.'
+license: OGL-UK-3.0
+metadata:
+  author: mmo-fes
+  version: "1.0"
 ---
 
 # Logic Apps — Review Skill

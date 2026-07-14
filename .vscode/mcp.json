@@ -1,0 +1,28 @@
+{
+  "$schema": "https://raw.githubusercontent.com/modelcontextprotocol/servers/main/schema/mcp.schema.json",
+  "//": "Only Defra-approved MCP servers may be enabled. See https://defra.github.io/defra-ai-sdlc/pages/appendix/defra-mcp-guidance/ . Do not enable community or self-built MCP servers.",
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "sonar-token",
+      "description": "SonarQube/SonarCloud USER token (not a project token)",
+      "password": true
+    }
+  ],
+  "servers": {
+    "sonarqube": {
+      "//": "Complete setup: set your SonarCloud organization below and provide the user token when prompted.",
+      "command": "docker",
+      "args": [
+        "run", "-i", "--rm",
+        "-e", "SONARQUBE_TOKEN",
+        "-e", "SONARQUBE_ORGANIZATION",
+        "mcp/sonarqube"
+      ],
+      "env": {
+        "SONARQUBE_TOKEN": "${input:sonar-token}",
+        "SONARQUBE_ORGANIZATION": "defra"
+      }
+    }
+  }
+}

@@ -1,0 +1,40 @@
+# Files GitHub Copilot must not use as context.
+# Uses .gitignore syntax. On government projects, exclude anything containing
+# real credentials, secrets, private keys, or personal data (PII), and any
+# OFFICIAL-SENSITIVE material. See:
+# https://defra.github.io/defra-ai-config-examples/pages/copilotignore
+
+# Logic Apps local settings and app-setting overrides (may contain secrets)
+**/local.settings.json
+*.settings.json
+**/local.settings.*.json
+
+# Environment and secrets
+.env
+.env.*
+*.env
+**/secrets/**
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+cabundle.pem
+
+# Connection secrets / credentials
+# connections.json and parameters.json must use Managed Identity only, but
+# exclude any file that could hold a real connection string, key, or SAS token.
+**/*credentials*
+**/*connection-string*
+**/*connectionstring*
+**/*.sas
+.azure/
+.npmrc
+
+# Reference data / fixtures that may contain real vessel, landing, or personal data
+**/fixtures/**/*real*
+**/*OFFICIAL-SENSITIVE*
+
+# Dependencies and logs
+node_modules/
+*.log
