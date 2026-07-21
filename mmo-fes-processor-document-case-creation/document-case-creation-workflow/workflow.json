@@ -12,7 +12,7 @@
                         }
                     },
                     "method": "get",
-                    "path": "/@{encodeURIComponent(encodeURIComponent('mmo-ecc-dyn-req-queue'))}/messages/head/peek",
+                    "path": "/@{encodeURIComponent(encodeURIComponent('document-case-queue'))}/messages/head/peek",
                     "queries": {
                         "queueType": "Main",
                         "sessionId": "Next Available"
@@ -29,7 +29,7 @@
                     }
                 },
                 "correlation": {
-                    "clientTrackingId": "@coalesce(json(base64ToString(triggerBody()?['ContentData']))?['_correlationId'], guid())"
+                    "clientTrackingId": "@coalesce(triggerBody()?['CorrelationId'], guid())"
                 }
             }
         },
@@ -502,7 +502,7 @@
                         "type": "SetVariable",
                         "inputs": {
                             "name": "Landings",
-                            "value": "@if( contains(variables('Payload'), 'landings'), variables('Payload')['landings'], null)"
+                            "value": "@if(contains(variables('Payload'), 'landings'), variables('Payload')['landings'], json('[]'))"
                         },
                         "runAfter": {
                             "Set_Payload": [
@@ -527,7 +527,7 @@
                         "description": "Sets the Exporter object using the exporter or exporterDetails property in the Payload object",
                         "inputs": {
                             "name": "Exporter",
-                            "value": "@if(contains(variables('Payload'),'exporter'),variables('Payload')['exporter'],if(contains(variables('Payload'),'exporterDetails'),variables('Payload')['exporterDetails'], if(contains(variables('Payload'),'exporterId'), json(concat('{','exporterNumber:',variables('Payload')['exporterId'])), first(variables('Landings'))['exporter'])))"
+                            "value": "@if(contains(variables('Payload'),'exporter'),variables('Payload')['exporter'],if(contains(variables('Payload'),'exporterDetails'),variables('Payload')['exporterDetails'],if(contains(variables('Payload'),'exporterId'),json(concat('{\"exporterNumber\":\"',string(variables('Payload')['exporterId']),'\"}')),if(and(not(empty(variables('Landings'))),equals(type(first(variables('Landings'))),'Object'),contains(first(variables('Landings')),'exporter')),first(variables('Landings'))['exporter'],json('{}')))))"
                         },
                         "runAfter": {
                             "Set_Catches_Products_Array": [
@@ -587,7 +587,7 @@
                         "type": "SetVariable",
                         "inputs": {
                             "name": "DocumentDate",
-                            "value": "@{if(contains(variables('Payload'),'documentDate'),variables('Payload')['documentDate'],if( greater(length(variables('Landings')),0), first( variables('Landings'))['documentDate'],''))}"
+                            "value": "@{if(contains(variables('Payload'),'documentDate'),if(and(not(empty(variables('Payload')['documentDate'])),greaterOrEquals(formatDateTime(variables('Payload')['documentDate'],'yyyy-MM-dd'),'1753-01-01')),variables('Payload')['documentDate'],''),if(and(greater(length(variables('Landings')),0),equals(type(first(variables('Landings'))),'Object'),contains(first(variables('Landings')),'documentDate'),not(empty(first(variables('Landings'))['documentDate'])),greaterOrEquals(formatDateTime(first(variables('Landings'))['documentDate'],'yyyy-MM-dd'),'1753-01-01')),first(variables('Landings'))['documentDate'],''))}"
                         },
                         "runAfter": {
                             "Set_DocumentNumber": [
@@ -761,7 +761,7 @@
                                 "actions": {
                                     "Get_CaseTypeName_from_either_Case_or_Landing_Status": {
                                         "type": "Compose",
-                                        "inputs": "@if(contains(variables('Payload'),'caseType2'),variables('Payload')['caseType2'],first(variables('Landings'))['status'])"
+                                        "inputs": "@if(contains(variables('Payload'),'caseType2'),variables('Payload')['caseType2'],if(and(not(empty(variables('Landings'))),equals(type(first(variables('Landings'))),'Object'),contains(first(variables('Landings')),'status')),first(variables('Landings'))['status'],''))"
                                     },
                                     "Switch_3": {
                                         "type": "Switch",
@@ -850,7 +850,9 @@
                                     },
                                     "authentication": {
                                         "audience": "https://storage.azure.com",
-                                        "type": "ManagedServiceIdentity"
+                                        "type": "ManagedServiceIdentity",
+                                        "identity": "@appsetting('MANAGED_IDENTITY_RESOURCE_ID')"
+
                                     }
                                 }
                             },
@@ -918,7 +920,8 @@
                                     },
                                     "authentication": {
                                         "audience": "https://storage.azure.com",
-                                        "type": "ManagedServiceIdentity"
+                                        "type": "ManagedServiceIdentity",
+                                        "identity": "@appsetting('MANAGED_IDENTITY_RESOURCE_ID')"
                                     }
                                 }
                             },
@@ -978,7 +981,8 @@
                                     },
                                     "authentication": {
                                         "audience": "https://storage.azure.com",
-                                        "type": "ManagedServiceIdentity"
+                                        "type": "ManagedServiceIdentity",
+                                        "identity": "@appsetting('MANAGED_IDENTITY_RESOURCE_ID')"
                                     }
                                 }
                             },
@@ -1038,7 +1042,8 @@
                                     },
                                     "authentication": {
                                         "audience": "https://storage.azure.com",
-                                        "type": "ManagedServiceIdentity"
+                                        "type": "ManagedServiceIdentity",
+                                        "identity": "@appsetting('MANAGED_IDENTITY_RESOURCE_ID')"
                                     }
                                 }
                             },
@@ -1413,23 +1418,23 @@
                                                 "_mmofe_customerid_value": "@variables('CustomerId')",
                                                 "_mmofe_customerid_type": "@{variables('CustomerIdType')}",
                                                 "mmofe_correlationid": "@variables('CorrelationId')",
-                                                "mmofe_documentdate": "@{formatDateTime(variables('DocumentDate'),'yyyy-MM-ddTHH:mm:ss')}",
+                                                "mmofe_documentdate": "@{if(greater(length(variables('DocumentDate')),0),formatDateTime(variables('DocumentDate'),'yyyy-MM-ddTHH:mm:ss'),null)}",
                                                 "mmofe_name": "@variables('DocumentNumber')",
                                                 "mmofe_documenturl": "@variables('DocumentUrl')",
-                                                "mmofe_integrationpayload": "@{variables('Payload')}",
+                                                "mmofe_integrationpayload": "@{string(variables('Payload'))}",
                                                 "mmofe_personresponsible": "@{if(contains(variables('Payload'), 'exporter'), if(contains(variables('Payload')['exporter'], 'fullName'), variables('Payload')['exporter']['fullName'], if(contains(variables('Payload'), 'personResponsible'), variables('Payload')['personResponsible'], null)), null)}",
                                                 "mmofe_processstatus": 961040000,
                                                 "statuscode": "@if(contains(variables('Payload'), 'caseType2'), if(contains(variables('Payload')['caseType2'], 'Void by an Exporter'), 961040000, if(contains(variables('Payload')['caseType2'], 'Void by SMO/PMO'), 961040001, 1)), null)"
                                             },
                                             "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_documents'))}/items"
                                         },
-                                        "trackedProperties": {
-                                            "correlationId": "@variables('CorrelationId')",
-                                            "documentNumber": "@variables('DocumentNumber')",
-                                            "stage": "document-case-creation",
-                                            "entity": "document",
-                                            "entityAction": "create"
-                                        }
+                                       "trackedProperties": {
+                                                            "correlationId": "@{coalesce(trigger().clientTrackingId, '')}",
+                                                            "documentNumber": "@{coalesce(json(base64ToString(triggerBody()?['ContentData']))?['documentNumber'], json(base64ToString(triggerBody()?['ContentData']))?['landings']?[0]?['documentNumber'], '')}",
+                                                            "stage": "document-case-creation",
+                                                            "entity": "document",
+                                                            "entityAction": "create"
+                                                }
                                     },
                                     "Set_variable_5": {
                                         "type": "SetVariable",
@@ -1488,7 +1493,7 @@
                                                         "mmofe_documentnumber": "@variables('DocumentNumber')",
                                                         "mmofe_exportdestinationcountry": "@{if(contains(variables('Payload'), 'exportedTo'), if(contains(variables('Payload')['exportedTo'], 'officialCountryName'), variables('Payload')['exportedTo']['officialCountryName'], null), null)}",
                                                         "mmofe_failureirrespectiveofrisk": "@if(contains(variables('Payload'), 'failureIrrespectiveOfRisk'), variables('Payload')['failureIrrespectiveOfRisk'], false)",
-                                                        "mmofe_integrationpayload": "@{variables('Payload')}",
+                                                        "mmofe_integrationpayload": "@{string(variables('Payload'))}",
                                                         "mmofe_iteration": "@variables('Iteration')",
                                                         "mmofe_landingscloned": "@if(contains(variables('Payload'), 'landingsCloned'), variables('Payload')['landingsCloned'], null)",
                                                         "mmofe_numberoffailedsubmissions": "@variables('NumberOfFailedSubmissions')",
@@ -1507,8 +1512,8 @@
                                                     "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('incidents'))}/items"
                                                 },
                                                 "trackedProperties": {
-                                                    "correlationId": "@variables('CorrelationId')",
-                                                    "documentNumber": "@variables('DocumentNumber')",
+                                                     "correlationId": "@{coalesce(trigger().clientTrackingId, '')}",
+                                                    "documentNumber": "@{coalesce(json(base64ToString(triggerBody()?['ContentData']))?['documentNumber'], json(base64ToString(triggerBody()?['ContentData']))?['landings']?[0]?['documentNumber'], '')}",
                                                     "stage": "document-case-creation",
                                                     "entity": "case",
                                                     "entityAction": "create-new-document"
@@ -1607,8 +1612,8 @@
                                                                 ]
                                                             },
                                                             "trackedProperties": {
-                                                                "correlationId": "@variables('CorrelationId')",
-                                                                "documentNumber": "@variables('DocumentNumber')",
+                                                                  "correlationId": "@{coalesce(trigger().clientTrackingId, '')}",
+                                                                 "documentNumber": "@{coalesce(json(base64ToString(triggerBody()?['ContentData']))?['documentNumber'], json(base64ToString(triggerBody()?['ContentData']))?['landings']?[0]?['documentNumber'], '')}",
                                                                 "stage": "document-case-creation",
                                                                 "entity": "document",
                                                                 "entityAction": "update"
@@ -1695,7 +1700,7 @@
                                                                                     "mmofe_documentnumber": "@variables('DocumentNumber')",
                                                                                     "mmofe_exportdestinationcountry": "@{if(contains(variables('Payload'), 'exportedTo'), if(contains(variables('Payload')['exportedTo'], 'officialCountryName'), variables('Payload')['exportedTo']['officialCountryName'], null), null)}",
                                                                                     "mmofe_failureirrespectiveofrisk": "@if(contains(variables('Payload'), 'failureIrrespectiveOfRisk'), variables('Payload')['failureIrrespectiveOfRisk'], false)",
-                                                                                    "mmofe_integrationpayload": "@{variables('Payload')}",
+                                                                                    "mmofe_integrationpayload": "@{string(variables('Payload'))}",
                                                                                     "mmofe_iteration": "@variables('Iteration')",
                                                                                     "mmofe_landingscloned": "@if(contains(variables('Payload'), 'landingsCloned'), variables('Payload')['landingsCloned'], null)",
                                                                                     "mmofe_numberoffailedsubmissions": "@variables('NumberOfFailedSubmissions')",
@@ -1714,8 +1719,8 @@
                                                                                 "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('incidents'))}/items"
                                                                             },
                                                                             "trackedProperties": {
-                                                                                "correlationId": "@variables('CorrelationId')",
-                                                                                "documentNumber": "@variables('DocumentNumber')",
+                                                                                "correlationId": "@{coalesce(trigger().clientTrackingId, '')}",
+                                                                                "documentNumber": "@{coalesce(json(base64ToString(triggerBody()?['ContentData']))?['documentNumber'], json(base64ToString(triggerBody()?['ContentData']))?['landings']?[0]?['documentNumber'], '')}",   
                                                                                 "stage": "document-case-creation",
                                                                                 "entity": "case",
                                                                                 "entityAction": "create-existing-document"
@@ -1791,7 +1796,7 @@
                                                                                                 "mmofe_documentnumber": "@variables('DocumentNumber')",
                                                                                                 "mmofe_exportdestinationcountry": "@{if(contains(variables('Payload'), 'exportedTo'), if(contains(variables('Payload')['exportedTo'], 'officialCountryName'), variables('Payload')['exportedTo']['officialCountryName'], null), null)}",
                                                                                                 "mmofe_failureirrespectiveofrisk": "@if(contains(variables('Payload'), 'failureIrrespectiveOfRisk'), variables('Payload')['failureIrrespectiveOfRisk'], false)",
-                                                                                                "mmofe_integrationpayload": "@{variables('Payload')}",
+                                                                                                "mmofe_integrationpayload": "@{string(variables('Payload'))}",
                                                                                                 "mmofe_iteration": "@variables('Iteration')",
                                                                                                 "mmofe_landingscloned": "@if(contains(variables('Payload'), 'landingsCloned'), variables('Payload')['landingsCloned'], null)",
                                                                                                 "mmofe_numberoffailedsubmissions": "@variables('NumberOfFailedSubmissions')",
@@ -1810,8 +1815,8 @@
                                                                                             "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('incidents'))}/items"
                                                                                         },
                                                                                         "trackedProperties": {
-                                                                                            "correlationId": "@variables('CorrelationId')",
-                                                                                            "documentNumber": "@variables('DocumentNumber')",
+                                                                                            "correlationId": "@{coalesce(trigger().clientTrackingId, '')}",
+                                                                                            "documentNumber": "@{coalesce(json(base64ToString(triggerBody()?['ContentData']))?['documentNumber'], json(base64ToString(triggerBody()?['ContentData']))?['landings']?[0]?['documentNumber'], '')}", 
                                                                                             "stage": "document-case-creation",
                                                                                             "entity": "case",
                                                                                             "entityAction": "create-resubmission"
@@ -1973,10 +1978,8 @@
                             ]
                         },
                         "trackedProperties": {
-                            "correlationId": "@variables('CorrelationId')",
-                            "documentNumber": "@variables('DocumentNumber')",
-                            "documentId": "@variables('DocumentId')",
-                            "caseId": "@variables('CaseId')",
+                            "correlationId": "@{coalesce(trigger().clientTrackingId, '')}",
+                            "documentNumber": "@{coalesce(json(base64ToString(triggerBody()?['ContentData']))?['documentNumber'], json(base64ToString(triggerBody()?['ContentData']))?['landings']?[0]?['documentNumber'], '')}", 
                             "stage": "document-case-creation",
                             "messageAction": "handoff"
                         }
@@ -1991,7 +1994,7 @@
                                 }
                             },
                             "method": "delete",
-                            "path": "/@{encodeURIComponent(encodeURIComponent('mmo-ecc-dyn-req-queue'))}/messages/complete",
+                            "path": "/@{encodeURIComponent(encodeURIComponent('document-case-queue'))}/messages/complete",
                             "queries": {
                                 "lockToken": "@triggerBody()?['LockToken']",
                                 "queueType": "Main",
@@ -2004,8 +2007,8 @@
                             ]
                         },
                         "trackedProperties": {
-                            "correlationId": "@variables('CorrelationId')",
-                            "documentNumber": "@variables('DocumentNumber')",
+                            "correlationId": "@{coalesce(trigger().clientTrackingId, '')}",
+                            "documentNumber": "@{coalesce(json(base64ToString(triggerBody()?['ContentData']))?['documentNumber'], json(base64ToString(triggerBody()?['ContentData']))?['landings']?[0]?['documentNumber'], '')}", 
                             "stage": "document-case-creation",
                             "messageAction": "complete"
                         }
@@ -2042,7 +2045,7 @@
                                 }
                             },
                             "method": "post",
-                            "path": "/@{encodeURIComponent(encodeURIComponent('mmo-ecc-dyn-req-queue'))}/messages/abandon",
+                            "path": "/@{encodeURIComponent(encodeURIComponent('document-case-queue'))}/messages/abandon",
                             "queries": {
                                 "lockToken": "@triggerBody()?['LockToken']",
                                 "queueType": "Main",
@@ -2055,8 +2058,8 @@
                             ]
                         },
                         "trackedProperties": {
-                            "correlationId": "@variables('CorrelationId')",
-                            "documentNumber": "@variables('DocumentNumber')",
+                            "correlationId": "@{coalesce(trigger().clientTrackingId, '')}",
+                            "documentNumber": "@{coalesce(json(base64ToString(triggerBody()?['ContentData']))?['documentNumber'], json(base64ToString(triggerBody()?['ContentData']))?['landings']?[0]?['documentNumber'], '')}", 
                             "stage": "document-case-creation",
                             "messageAction": "abandon"
                         }
@@ -2065,8 +2068,8 @@
                 "runAfter": {
                     "Process_Document_Case_And_Handoff": [
                         "Failed",
-                        "TimedOut",
-                        "Aborted"
+                        "Skipped",
+                        "TimedOut"
                     ]
                 }
             }
