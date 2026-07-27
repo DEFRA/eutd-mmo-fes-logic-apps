@@ -1,0 +1,1054 @@
+{
+	"definition": {
+		"$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+		"contentVersion": "1.0.0.0",
+		"triggers": {
+			"When_a_message_is_received_in_a_queue_(peek-lock)": {
+				"type": "ApiConnection",
+				"inputs": {
+					"host": {
+						"connection": {
+							"referenceName": "servicebus"
+						}
+					},
+					"method": "get",
+					"path": "/@{encodeURIComponent(encodeURIComponent('landing-queue'))}/messages/head/peek",
+					"queries": {
+						"queueType": "Main",
+						"sessionId": "Next Available"
+					}
+				},
+				"recurrence": {
+					"interval": 30,
+					"frequency": "Second"
+				},
+				"conditions": [],
+				"runtimeConfiguration": {
+					"concurrency": {
+						"runs": 10
+					}
+				},
+				"correlation": {
+					"clientTrackingId": "@coalesce(triggerBody()?['CorrelationId'], triggerBody()?['Properties']?['correlationId'], guid())"
+				}
+			}
+		},
+		"actions": {
+			"Parse_Payload_to_Object": {
+				"type": "Compose",
+				"description": "Parse the queue message payload into an object for landing processing.",
+				"inputs": "@json(base64ToString(triggerBody()?['ContentData']))",
+				"runAfter": {}
+			},
+			"Initialise_Payload": {
+				"type": "InitializeVariable",
+				"inputs": {
+					"variables": [
+						{
+							"name": "Payload",
+							"type": "object",
+							"value": {}
+						}
+					]
+				},
+				"runAfter": {
+					"Parse_Payload_to_Object": [
+						"Succeeded"
+					]
+				}
+			},
+			"Initialise_Landings_Array": {
+				"type": "InitializeVariable",
+				"inputs": {
+					"variables": [
+						{
+							"name": "Landings",
+							"type": "array",
+							"value": []
+						}
+					]
+				},
+				"runAfter": {
+					"Initialise_Payload": [
+						"Succeeded"
+					]
+				}
+			},
+			"Initialise_DocumentId": {
+				"type": "InitializeVariable",
+				"inputs": {
+					"variables": [
+						{
+							"name": "DocumentId",
+							"type": "string"
+						}
+					]
+				},
+				"runAfter": {
+					"Initialise_Landings_Array": [
+						"Succeeded"
+					]
+				}
+			},
+			"Initialise_CaseId": {
+				"type": "InitializeVariable",
+				"inputs": {
+					"variables": [
+						{
+							"name": "CaseId",
+							"type": "string"
+						}
+					]
+				},
+				"runAfter": {
+					"Initialise_DocumentId": [
+						"Succeeded"
+					]
+				}
+			},
+			"Initialise_CustomerId": {
+				"type": "InitializeVariable",
+				"inputs": {
+					"variables": [
+						{
+							"name": "CustomerId",
+							"type": "string"
+						}
+					]
+				},
+				"runAfter": {
+					"Initialise_CaseId": [
+						"Succeeded"
+					]
+				}
+			},
+			"Initialise_CustomerIdType": {
+				"type": "InitializeVariable",
+				"inputs": {
+					"variables": [
+						{
+							"name": "CustomerIdType",
+							"type": "string"
+						}
+					]
+				},
+				"runAfter": {
+					"Initialise_CustomerId": [
+						"Succeeded"
+					]
+				}
+			},
+			"Initialise_CorrelationId": {
+				"type": "InitializeVariable",
+				"inputs": {
+					"variables": [
+						{
+							"name": "CorrelationId",
+							"type": "string"
+						}
+					]
+				},
+				"runAfter": {
+					"Initialise_CustomerIdType": [
+						"Succeeded"
+					]
+				}
+			},
+			"Initialise_Iteration": {
+				"type": "InitializeVariable",
+				"inputs": {
+					"variables": [
+						{
+							"name": "Iteration",
+							"type": "integer",
+							"value": 0
+						}
+					]
+				},
+				"runAfter": {
+					"Initialise_CorrelationId": [
+						"Succeeded"
+					]
+				}
+			},
+			"Initialize_Submission_Landing_Status": {
+				"type": "InitializeVariable",
+				"inputs": {
+					"variables": [
+						{
+							"name": "Submission Landing Status",
+							"type": "string"
+						}
+					]
+				},
+				"runAfter": {
+					"Initialise_Iteration": [
+						"Succeeded"
+					]
+				}
+			},
+			"Initialize_Retrospective_Period_Complete": {
+				"type": "InitializeVariable",
+				"inputs": {
+					"variables": [
+						{
+							"name": "Retrospective Period Complete",
+							"type": "boolean",
+							"value": false
+						}
+					]
+				},
+				"runAfter": {
+					"Initialize_Submission_Landing_Status": [
+						"Succeeded"
+					]
+				}
+			},
+			"Process_Landings_And_Complete": {
+				"type": "Scope",
+				"description": "Stage 2 of the split: apply complete landing create/update logic and settle the source queue message on success.",
+				"actions": {
+					"Set_Payload": {
+						"type": "SetVariable",
+						"inputs": {
+							"name": "Payload",
+							"value": "@if(contains(outputs('Parse_Payload_to_Object'),'payload'),outputs('Parse_Payload_to_Object')['payload'],outputs('Parse_Payload_to_Object'))"
+						},
+						"runAfter": {}
+					},
+					"Set_Landings_Array": {
+						"type": "SetVariable",
+						"inputs": {
+							"name": "Landings",
+							"value": "@if(contains(variables('Payload'),'landings'),variables('Payload')['landings'],json('[]'))"
+						},
+						"runAfter": {
+							"Set_Payload": [
+								"Succeeded"
+							]
+						}
+					},
+					"Set_DocumentId": {
+						"type": "SetVariable",
+						"inputs": {
+							"name": "DocumentId",
+							"value": "@coalesce(outputs('Parse_Payload_to_Object')?['documentId'],'')"
+						},
+						"runAfter": {
+							"Set_Landings_Array": [
+								"Succeeded"
+							]
+						}
+					},
+					"Set_CaseId": {
+						"type": "SetVariable",
+						"inputs": {
+							"name": "CaseId",
+							"value": "@coalesce(outputs('Parse_Payload_to_Object')?['caseId'],'')"
+						},
+						"runAfter": {
+							"Set_DocumentId": [
+								"Succeeded"
+							]
+						}
+					},
+					"Set_CustomerId": {
+						"type": "SetVariable",
+						"inputs": {
+							"name": "CustomerId",
+							"value": "@coalesce(outputs('Parse_Payload_to_Object')?['customerId'],'')"
+						},
+						"runAfter": {
+							"Set_CaseId": [
+								"Succeeded"
+							]
+						}
+					},
+					"Set_CustomerIdType": {
+						"type": "SetVariable",
+						"inputs": {
+							"name": "CustomerIdType",
+							"value": "@coalesce(outputs('Parse_Payload_to_Object')?['customerIdType'],'')"
+						},
+						"runAfter": {
+							"Set_CustomerId": [
+								"Succeeded"
+							]
+						}
+					},
+					"Set_CorrelationId": {
+						"type": "SetVariable",
+						"inputs": {
+							"name": "CorrelationId",
+							"value": "@coalesce(outputs('Parse_Payload_to_Object')?['correlationId'], trigger().clientTrackingId, '')"
+						},
+						"runAfter": {
+							"Set_CustomerIdType": [
+								"Succeeded"
+							]
+						}
+					},
+					"Set_Iteration": {
+						"type": "SetVariable",
+						"inputs": {
+							"name": "Iteration",
+							"value": "@int(coalesce(outputs('Parse_Payload_to_Object')?['iteration'],0))"
+						},
+						"runAfter": {
+							"Set_CorrelationId": [
+								"Succeeded"
+							]
+						}
+					},
+					"Create_or_Update_Landings": {
+						"type": "Scope",
+						"actions": {
+							"For_each_3": {
+								"type": "Foreach",
+								"foreach": "@variables('Landings')",
+								"actions": {
+									"Scope": {
+										"type": "Scope",
+										"actions": {
+											"Condition_7": {
+												"type": "If",
+												"expression": {
+													"and": [
+														{
+															"equals": [
+																"@length(body('List_records_6')?['value'])",
+																1
+															]
+														}
+													]
+												},
+												"actions": {
+													"Condition_9": {
+														"type": "If",
+														"expression": {
+															"and": [
+																{
+																	"equals": [
+																		"@outputs('Existing_Source')",
+																		961040000
+																	]
+																},
+																{
+																	"less": [
+																		"@outputs('Existing_Live_Export_Weight')",
+																		50
+																	]
+																},
+																{
+																	"equals": [
+																		"@outputs('Existing_IsLate')",
+																		961040001
+																	]
+																},
+																{
+																	"equals": [
+																		"@outputs('Updated_Source')",
+																		961040001
+																	]
+																}
+															]
+														},
+														"actions": {},
+														"else": {
+															"actions": {
+																"Update_a_record_11": {
+																	"type": "ApiConnection",
+																	"inputs": {
+																		"host": {
+																			"connection": {
+																				"referenceName": "commondataservice"
+																			}
+																		},
+																		"method": "patch",
+																		"body": {
+																			"mmofe_late": "@if(contains(string(item()),'isLate'), if(equals(item()['isLate'],true),961040000, 961040001), null)"
+																		},
+																		"path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_landingses'))}/items/@{encodeURIComponent(encodeURIComponent(outputs('UpdateLandingId')))}"
+																	}
+																}
+															}
+														},
+														"runAfter": {
+															"Updated_Source": [
+																"Succeeded"
+															]
+														}
+													},
+													"Existing_IsLate": {
+														"type": "Compose",
+														"inputs": "@body('List_records_6')?['value'][0]['mmofe_late']",
+														"runAfter": {
+															"Existing_Live_Export_Weight": [
+																"Succeeded"
+															]
+														}
+													},
+													"Existing_Live_Export_Weight": {
+														"type": "Compose",
+														"inputs": "@body('List_records_6')?['value'][0]['mmofe_liveexportweight']",
+														"runAfter": {
+															"Existing_Source": [
+																"Succeeded"
+															]
+														}
+													},
+													"Existing_Source": {
+														"type": "Compose",
+														"inputs": "@body('List_records_6')?['value'][0]['mmofe_sourcedata']",
+														"runAfter": {
+															"UpdateLandingId": [
+																"Succeeded"
+															]
+														}
+													},
+													"If_CaseId_is_null_Set_From_Dynamics": {
+														"type": "If",
+														"expression": {
+															"and": [
+																{
+																	"equals": [
+																		"@variables('CaseId')",
+																		""
+																	]
+																}
+															]
+														},
+														"actions": {
+															"For_each_2": {
+																"type": "Foreach",
+																"foreach": "@body('List_records_6')?['value']",
+																"actions": {
+																	"Set_variable_8": {
+																		"type": "SetVariable",
+																		"inputs": {
+																			"name": "CaseId",
+																			"value": "@items('For_each_2')?['_mmofe_caseid_value']"
+																		}
+																	}
+																}
+															}
+														},
+														"else": {
+															"actions": {}
+														},
+														"runAfter": {
+															"Existing_IsLate": [
+																"Succeeded"
+															]
+														}
+													},
+													"List_records_11": {
+														"type": "ApiConnection",
+														"inputs": {
+															"host": {
+																"connection": {
+																	"referenceName": "commondataservice"
+																}
+															},
+															"method": "get",
+															"path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_landingses'))}/items",
+															"queries": {
+																"$filter": "_mmofe_documentid_value eq '@{variables('DocumentId')}' and mmofe_name eq '@{items('For_each_3')['id']}' and mmofe_numberoftotalsubmissions eq @{outputs('NumberOfTotalSubmission')}",
+																"$top": 1
+															}
+														},
+														"runAfter": {
+															"Update_a_record": [
+																"Succeeded"
+															]
+														}
+													},
+													"UpdateLandingId": {
+														"type": "Compose",
+														"inputs": "@body('List_records_6')?['value'][0]['mmofe_landingsid']"
+													},
+													"Update_a_record": {
+														"type": "ApiConnection",
+														"inputs": {
+															"host": {
+																"connection": {
+																	"referenceName": "commondataservice"
+																}
+															},
+															"method": "patch",
+															"body": {
+																"mmofe_totalestimatedweightexportedspecies": "@if(contains(string(item()),'totalEstimatedForExportSpecies'), json(string(item()['validation']))['totalEstimatedForExportSpecies'],null)",
+																"mmofe_commoditycode": "@{if(contains(string(item()),'cnCode'), item()['cnCode'],null)}",
+																"mmofe_admincommoditycode": "@{if(contains(string(item()),'adminCommodityCode'), item()['adminCommodityCode'],null)}",
+																"mmofe_correlationid": "@variables('CorrelationId')",
+																"mmofe_dataeverexpected": "@if(contains(string(item()),'dataEverExpected'), if(equals(item()['dataEverExpected'],true),961040000, 961040001), null)",
+																"mmofe_dataexpectedatsubmission": "@if(contains(string(item()),'landingDataExpectedAtSubmission'), if(equals(item()['landingDataExpectedAtSubmission'],true),961040000, 961040001), null)",
+																"mmofe_dataexpectedby": "@if(contains(string(item()),'landingDataExpectedDate'), formatDateTime(item()['landingDataExpectedDate'], 'yyyy-MM-dd'), null)",
+																"mmofe_datareceived": "@if(contains(string(item()),'dateDataReceived'), formatDateTime(item()['dateDataReceived'], 'yyyy-MM-dd'), null)",
+																"mmofe_datelanding": "@{formatDateTime(item()['landingDate'], 'yyyy-MM-dd')}",
+																"mmofe_totalestimatedweight": "@if(contains(string(item()),'totalEstimatedWithTolerance'), json(string(item()['validation']))['totalEstimatedWithTolerance'],null)",
+																"mmofe_exporterbehaviourriskscore": "@if(contains(string(item()),'risking'), if(contains(item()['risking'],'exporterRiskScore'), item()['risking']['exporterRiskScore'], 0), 0)",
+																"mmofe_highlowrisk": "@if(contains(string(item()),'risking'), if(contains(item()['risking'],'highOrLowRisk'), if(equals(item()['risking']['highOrLowRisk'], 'Low'), true, false), false), false)",
+																"mmofe_integrationpayload": "@{string(item())}",
+																"mmofe_iteration": "@variables('Iteration')",
+																"mmofe_landedweightexceedby": "@if(contains(string(item()),'landedWeightExceededBy'), json(string(item()['validation']))['landedWeightExceededBy'],null)",
+																"mmofe_totalliveweightexportedspecies": "@if(contains(string(item()),'totalLiveForExportSpecies'), json(string(item()['validation']))['totalLiveForExportSpecies'],null)",
+																"mmofe_totallandingdecweightexportedspecies": "@if(contains(string(item()),'totalWeightForSpecies'), json(string(item()['validation']))['totalWeightForSpecies'],null)",
+																"mmofe_name": "@{if(contains(string(item()),'id'), item()['id'],null)}",
+																"mmofe_landingoutcomeatretrospectivecheck": "@if(contains(string(item()),'landingOutcomeAtRetrospectiveCheck'), if(equals(item()['landingOutcomeAtRetrospectiveCheck'],'Success'),961040000, 961040001), null)",
+																"mmofe_landingriskscore": "@if(contains(string(item()),'risking'), if(contains(item()['risking'],'landingRiskScore'), item()['risking']['landingRiskScore'], 0), 0)",
+																"mmofe_late": "@if(contains(string(item()),'isLate'), if(equals(item()['isLate'],true),961040000, 961040001), null)",
+																"mmofe_licenceholder": "@{if(contains(string(item()),'licenceHolder'), item()['licenceHolder'],null)}",
+																"mmofe_liveexportweight": "@if(contains(string(item()),'liveExportWeight'), json(string(item()['validation']))['liveExportWeight'],null)",
+																"mmofe_numberoftotalsubmissions": "@outputs('NumberOfTotalSubmission')",
+																"mmofe_overuseinfo": "@{if(contains(string(item()),'risking'), if(contains(item()['risking'],'overuseInfo'), join(item()['risking']['overuseInfo'], ', '), null), null)}",
+																"mmofe_adminpresentation": "@{if(contains(string(item()),'adminPresentation'), item()['adminPresentation'],null)}",
+																"mmofe_retrospectiveendingon": "@if(contains(string(item()),'landingDataEndDate'), formatDateTime(item()['landingDataEndDate'], 'yyyy-MM-dd'), null)",
+																"mmofe_daylimitreached": "@if(contains(string(item()),'is14DayLimitReached'), item()['is14DayLimitReached'],null)",
+																"mmofe_salesnoteurl": "@{if(contains(string(item()),'salesNoteUrl'), json(string(item()['validation']))['salesNoteUrl'],null)}",
+																"mmofe_sourcedata": "@outputs('Source')",
+																"mmofe_adminspecies": "@{if(contains(string(item()),'adminSpecies'), item()['adminSpecies'],null)}",
+																"mmofe_speciesalias": "@if(contains(string(item()),'speciesAlias'), if(equals(item()['speciesAlias'],'N'),false, if(equals(item()['speciesAlias'],'Y'),true, null)), null)",
+																"mmofe_speciesanomaly": "@if(contains(string(item()),'speciesAnomaly'), item()['speciesAnomaly'],null)",
+																"mmofe_speciesmanuallyoverridden": "@if(contains(variables('Payload'), 'speciesOverriddenByAdmin'), variables('Payload')['speciesOverriddenByAdmin'], false)",
+																"mmofe_speciesrisk": "@if(contains(string(item()),'risking'), if(contains(item()['risking'],'speciesRisk'), item()['risking']['speciesRisk'], null), null)",
+																"mmofe_speciestogglerisk": "@if(contains(string(item()),'risking'), if(contains(item()['risking'],'isSpeciesRiskEnabled'), item()['risking']['isSpeciesRiskEnabled'], false), false)",
+																"mmofe_startdate": "@if(contains(string(item()),'startDate'), formatDateTime(item()['startDate'], 'yyyy-MM-dd'), null)",
+																"mmofe_adminstate": "@{if(contains(string(item()),'adminState'), item()['adminState'],null)}",
+																"mmofe_totalweightrecordedagainstlanding": "@if(contains(string(item()),'totalRecordedAgainstLanding'), json(string(item()['validation']))['totalRecordedAgainstLanding'],null)",
+																"mmofe_validationlegal": "@if(contains(string(item()),'isLegallyDue'), if(equals(json(string(item()['validation']))['isLegallyDue'],true),961040000,961040001),null)",
+																"mmofe_validationurl": "@{if(contains(string(item()),'rawLandingsUrl'), json(string(item()['validation']))['rawLandingsUrl'],null)}",
+																"mmofe_vesseladministration": "@outputs('VesselAdmin')",
+																"mmofe_vesselmanuallyoverridden": "@if(contains(string(item()),'vesselOverriddenByAdmin'), item()['vesselOverriddenByAdmin'],false)",
+																"mmofe_vesselpln": "@{if(contains(string(item()),'vesselName'), item()['vesselName'],null)}",
+																"mmofe_vesselnumber": "@{if(contains(string(item()),'vesselPln'), item()['vesselPln'],null)}",
+																"mmofe_vesselinterest": "@if(contains(string(item()),'risking'), if(contains(item()['risking'],'vessel'), item()['risking']['vessel'], null), null)",
+																"mmofe_vesselsize": "@{if(contains(string(item()),'vesselLength'), item()['vesselLength'],0)}",
+																"mmofe_weight": "@{if(contains(string(item()),'weight'), item()['weight'],null)}",
+																"_mmofe_presentationid_value": "@{outputs('PresentationId')}",
+																"_mmofe_validationstatusid_value": "@{if(greater(length(outputs('ValidationStatusRetro')),0),outputs('ValidationStatusRetro'),outputs('ValidationStatusid'))}",
+																"_mmofe_speciesid_value": "@{outputs('SpeciesId')}",
+																"_mmofe_stateid_value": "@{outputs('StateId')}"
+															},
+															"path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_landingses'))}/items/@{encodeURIComponent(encodeURIComponent(outputs('UpdateLandingId')))}"
+														},
+														"runAfter": {
+															"If_CaseId_is_null_Set_From_Dynamics": [
+																"Succeeded"
+															]
+														}
+													},
+													"Updated_Source": {
+														"type": "Compose",
+														"inputs": "@body('List_records_11')?['value'][0]['mmofe_sourcedata']",
+														"runAfter": {
+															"List_records_11": [
+																"Succeeded"
+															]
+														}
+													}
+												},
+												"else": {
+													"actions": {
+														"Create_a_new_record_8": {
+															"type": "ApiConnection",
+															"inputs": {
+																"host": {
+																	"connection": {
+																		"referenceName": "commondataservice"
+																	}
+																},
+																"method": "post",
+																"body": {
+																	"_mmofe_caseid_value": "@variables('CaseId')",
+																	"_mmofe_documentid_value": "@variables('DocumentId')",
+																	"mmofe_totalestimatedweightexportedspecies": "@if(contains(string(item()),'totalEstimatedForExportSpecies'), json(string(item()['validation']))['totalEstimatedForExportSpecies'],null)",
+																	"mmofe_commoditycode": "@{if(contains(string(item()),'cnCode'), item()['cnCode'],null)}",
+																	"mmofe_admincommoditycode": "@{if(contains(string(item()),'adminCommodityCode'), item()['adminCommodityCode'],null)}",
+																	"mmofe_correlationid": "@variables('CorrelationId')",
+																	"mmofe_dataeverexpected": "@if(contains(string(item()),'dataEverExpected'), if(equals(item()['dataEverExpected'],true),961040000, 961040001), null)",
+																	"mmofe_dataexpectedatsubmission": "@if(contains(string(item()),'landingDataExpectedAtSubmission'), if(equals(item()['landingDataExpectedAtSubmission'],true),961040000, 961040001), null)",
+																	"mmofe_dataexpectedby": "@if(contains(string(item()),'landingDataExpectedDate'), formatDateTime(item()['landingDataExpectedDate'], 'yyyy-MM-dd'), null)",
+																	"mmofe_datareceived": "@if(contains(string(item()),'dateDataReceived'), formatDateTime(item()['dateDataReceived'], 'yyyy-MM-dd'), null)",
+																	"mmofe_datelanding": "@{formatDateTime(item()['landingDate'], 'yyyy-MM-dd')}",
+																	"mmofe_totalestimatedweight": "@if(contains(string(item()),'totalEstimatedWithTolerance'), json(string(item()['validation']))['totalEstimatedWithTolerance'],null)",
+																	"mmofe_eez": "@{if(contains(string(item()),'exclusiveEconomicZones'), item()['exclusiveEconomicZones'],null)}",
+																	"mmofe_exporterbehaviourriskscore": "@if(contains(string(item()),'risking'), if(contains(item()['risking'],'exporterRiskScore'), item()['risking']['exporterRiskScore'], null), null)",
+																	"mmofe_geartype": "@{if(contains(string(item()),'gearType'), item()['gearType'],null)}",
+																	"mmofe_highlowrisk": "@if(contains(string(item()),'risking'), if(contains(item()['risking'],'highOrLowRisk'), if(equals(item()['risking']['highOrLowRisk'], 'Low'), true, false), false), false)",
+																	"mmofe_highseasarea": "@if(contains(string(item()),'highSeasArea'), if(equals(item()['highSeasArea'],'Yes'),961040000, 961040001), null)",
+																	"mmofe_integrationpayload": "@{string(item())}",
+																	"mmofe_iteration": "@variables('Iteration')",
+																	"mmofe_landedweightexceedby": "@if(contains(string(item()),'landedWeightExceededBy'), json(string(item()['validation']))['landedWeightExceededBy'],null)",
+																	"mmofe_totalliveweightexportedspecies": "@if(contains(string(item()),'totalLiveForExportSpecies'), json(string(item()['validation']))['totalLiveForExportSpecies'],null)",
+																	"mmofe_totallandingdecweightexportedspecies": "@if(contains(string(item()),'totalWeightForSpecies'), json(string(item()['validation']))['totalWeightForSpecies'],null)",
+																	"mmofe_name": "@{if(contains(string(item()),'id'), item()['id'],null)}",
+																	"mmofe_landingoutcomeatretrospectivecheck": "@if(contains(string(item()),'landingOutcomeAtRetrospectiveCheck'), if(equals(item()['landingOutcomeAtRetrospectiveCheck'],'Success'),961040000, 961040001), null)",
+																	"mmofe_landingoutcomeatsubmission": "@if(contains(string(item()),'landingOutcomeAtSubmission'), if(equals(item()['landingOutcomeAtSubmission'],'Success'),961040000, 961040001), null)",
+																	"mmofe_landingriskscore": "@if(contains(string(item()),'risking'), if(contains(item()['risking'],'landingRiskScore'), item()['risking']['landingRiskScore'], 0), 0)",
+																	"mmofe_late": "@if(contains(string(item()),'isLate'), if(equals(item()['isLate'],true),961040000, 961040001), null)",
+																	"mmofe_licenceholder": "@{if(contains(string(item()),'licenceHolder'), item()['licenceHolder'],null)}",
+																	"mmofe_liveexportweight": "@if(contains(string(item()),'liveExportWeight'), json(string(item()['validation']))['liveExportWeight'],null)",
+																	"mmofe_numberoftotalsubmissions": "@outputs('NumberOfTotalSubmission')",
+																	"mmofe_overuseinfo": "@{if(contains(string(item()),'risking'), if(contains(item()['risking'],'overuseInfo'), join(item()['risking']['overuseInfo'], ', '), null), null)}",
+																	"mmofe_adminpresentation": "@{if(contains(string(item()),'adminPresentation'), item()['adminPresentation'],null)}",
+																	"mmofe_rfmo": "@{if(contains(string(item()),'rfmo'), item()['rfmo'],null)}",
+																	"mmofe_retrospectiveendingon": "@if(contains(string(item()),'landingDataEndDate'), formatDateTime(item()['landingDataEndDate'], 'yyyy-MM-dd'), null)",
+																	"mmofe_daylimitreached": "@if(contains(string(item()),'is14DayLimitReached'), item()['is14DayLimitReached'],null)",
+																	"mmofe_salesnoteurl": "@{if(contains(string(item()),'salesNoteUrl'), json(string(item()['validation']))['salesNoteUrl'],null)}",
+																	"mmofe_sourcedata": "@outputs('Source')",
+																	"mmofe_adminspecies": "@{if(contains(string(item()),'adminSpecies'), item()['adminSpecies'],null)}",
+																	"mmofe_speciesalias": "@if(contains(string(item()),'speciesAlias'), if(equals(item()['speciesAlias'],'N'),false, if(equals(item()['speciesAlias'],'Y'),true, null)), null)",
+																	"mmofe_speciesanomaly": "@if(contains(string(item()),'speciesAnomaly'), item()['speciesAnomaly'],null)",
+																	"mmofe_speciesmanuallyoverridden": "@if(contains(variables('Payload'), 'speciesOverriddenByAdmin'), variables('Payload')['speciesOverriddenByAdmin'], false)",
+																	"mmofe_speciesrisk": "@if(contains(string(item()),'risking'), if(contains(item()['risking'],'speciesRisk'), item()['risking']['speciesRisk'], null), null)",
+																	"mmofe_speciestogglerisk": "@if(contains(string(item()),'risking'), if(contains(item()['risking'],'isSpeciesRiskEnabled'), item()['risking']['isSpeciesRiskEnabled'], false), false)",
+																	"mmofe_startdate": "@if(contains(string(item()),'startDate'), formatDateTime(item()['startDate'], 'yyyy-MM-dd'), null)",
+																	"mmofe_adminstate": "@{if(contains(string(item()),'adminState'), item()['adminState'],null)}",
+																	"mmofe_totalweightrecordedagainstlanding": "@if(contains(string(item()),'totalRecordedAgainstLanding'), json(string(item()['validation']))['totalRecordedAgainstLanding'],null)",
+																	"mmofe_validationlegal": "@if(contains(string(item()),'isLegallyDue'), if(equals(json(string(item()['validation']))['isLegallyDue'],true),961040000,961040001),null)",
+																	"mmofe_validationurl": "@{if(contains(string(item()),'rawLandingsUrl'), json(string(item()['validation']))['rawLandingsUrl'],null)}",
+																	"mmofe_vesseladministration": "@outputs('VesselAdmin')",
+																	"mmofe_vesselmanuallyoverridden": "@if(contains(string(item()),'vesselOverriddenByAdmin'), item()['vesselOverriddenByAdmin'],false)",
+																	"mmofe_vesselpln": "@{if(contains(string(item()),'vesselName'), item()['vesselName'],null)}",
+																	"mmofe_vesselnumber": "@{if(contains(string(item()),'vesselPln'), item()['vesselPln'],null)}",
+																	"mmofe_vesselinterest": "@if(contains(string(item()),'risking'), if(contains(item()['risking'],'vessel'), item()['risking']['vessel'], 0), 0)",
+																	"mmofe_vesselsize": "@{if(contains(string(item()),'vesselLength'), item()['vesselLength'],0)}",
+																	"mmofe_weight": "@{if(contains(string(item()),'weight'), item()['weight'],null)}",
+																	"_mmofe_customerid_value": "@variables('CustomerId')",
+																	"_mmofe_customerid_type": "@{variables('CustomerIdType')}",
+																	"_mmofe_presentationid_value": "@{outputs('PresentationId')}",
+																	"_mmofe_validationstatusid_value": "@{outputs('ValidationStatusRetro')}",
+																	"_mmofe_speciesid_value": "@{outputs('SpeciesId')}",
+																	"_mmofe_stateid_value": "@{outputs('StateId')}",
+																	"_mmofe_validationstatusapplicationsubmissionid_value": "@{outputs('ValidationStatusId')}"
+																},
+																"path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_landingses'))}/items"
+															}
+														},
+														"Check_Submission_Landing_Status": {
+															"type": "If",
+															"expression": {
+																"and": [
+																	{
+																		"or": [
+																			{
+																				"equals": [
+																					"@variables('Submission Landing Status')",
+																					"7d04d01c-d38f-ee11-8179-6045bd905f18"
+																				]
+																			},
+																			{
+																				"equals": [
+																					"@variables('Submission Landing Status')",
+																					"3805cb04-d38f-ee11-8179-6045bd905f18"
+																				]
+																			},
+																			{
+																				"equals": [
+																					"@variables('Submission Landing Status')",
+																					"954f914e-cd8e-ee11-8179-6045bd905d39"
+																				]
+																			}
+																		]
+																	},
+																	{
+																		"equals": [
+																			"@variables('Retrospective Period Complete')",
+																			false
+																		]
+																	}
+																]
+															},
+															"actions": {
+																"Update_a_record_10": {
+																	"type": "ApiConnection",
+																	"inputs": {
+																		"host": {
+																			"connection": {
+																				"referenceName": "commondataservice"
+																			}
+																		},
+																		"method": "patch",
+																		"body": {
+																			"mmofe_landingoutcomeatretrospectivecheck": 961040000
+																		},
+																		"path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_landingses'))}/items/@{encodeURIComponent(encodeURIComponent(outputs('Updatelanding2')))}"
+																	}
+																}
+															},
+															"else": {
+																"actions": {}
+															},
+															"runAfter": {
+																"Set_Retrospective_Period_Complete": [
+																	"Succeeded"
+																]
+															}
+														},
+														"List_records_10": {
+															"type": "ApiConnection",
+															"inputs": {
+																"host": {
+																	"connection": {
+																		"referenceName": "commondataservice"
+																	}
+																},
+																"method": "get",
+																"path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_landingses'))}/items",
+																"queries": {
+																	"$filter": "_mmofe_documentid_value eq '@{variables('DocumentId')}' and mmofe_name eq '@{items('For_each_3')['id']}' and mmofe_numberoftotalsubmissions eq @{outputs('NumberOfTotalSubmission')}",
+																	"$top": 1
+																}
+															},
+															"runAfter": {
+																"Create_a_new_record_8": [
+																	"Succeeded"
+																]
+															}
+														},
+														"Set_Submission_Landing_Status": {
+															"type": "SetVariable",
+															"inputs": {
+																"name": "Submission Landing Status",
+																"value": "@{body('Create_a_new_record_8')?['_mmofe_validationstatusapplicationsubmissionid_value']}"
+															},
+															"runAfter": {
+																"Updatelanding2": [
+																	"Succeeded"
+																]
+															}
+														},
+														"Set_Retrospective_Period_Complete": {
+															"type": "SetVariable",
+															"inputs": {
+																"name": "Retrospective Period Complete",
+																"value": "@body('Create_a_new_record_8')?['mmofe_daylimitreached']"
+															},
+															"runAfter": {
+																"Set_Submission_Landing_Status": [
+																	"Succeeded"
+																]
+															}
+														},
+														"Updatelanding2": {
+															"type": "Compose",
+															"inputs": "@body('List_records_10')?['value'][0]['mmofe_landingsid']",
+															"runAfter": {
+																"List_records_10": [
+																	"Succeeded"
+																]
+															}
+														}
+													}
+												},
+												"runAfter": {
+													"List_records_6": [
+														"Succeeded"
+													]
+												}
+											},
+											"Get_Landing_Status": {
+												"type": "Http",
+												"inputs": {
+													"uri": "@{parameters('BlobStorage')}/mmorefdata(PartitionKey='LandingStatus',RowKey='@{encodeURIComponent(items('For_each_3')['status'])}')",
+													"method": "GET",
+													"headers": {
+														"Accept": "application/json",
+														"x-ms-version": "2019-07-07"
+													},
+													"authentication": {
+														"audience": "https://storage.azure.com",
+														"type": "ManagedServiceIdentity"
+													},
+													"retryPolicy": {
+														"type": "exponential",
+														"count": 10,
+														"interval": "PT7S"
+													}
+												},
+												"runAfter": {
+													"Get_Species": [
+														"Succeeded"
+													]
+												}
+											},
+											"Get_Presentation": {
+												"type": "Http",
+												"inputs": {
+													"uri": "@{parameters('BlobStorage')}/mmorefdata(PartitionKey='Presentation',RowKey='@{encodeURIComponent(items('For_each_3')['presentation'])}')",
+													"method": "GET",
+													"headers": {
+														"Accept": "application/json",
+														"x-ms-version": "2019-07-07"
+													},
+													"queries": {
+														"PartitionKey": "Presentation",
+														"RowKey": "@{items('For_each_3')['presentation']}"
+													},
+													"authentication": {
+														"audience": "https://storage.azure.com",
+														"type": "ManagedServiceIdentity"
+													},
+													"path": "/Tables/@{encodeURIComponent('mmorefdata')}/entities(PartitionKey='@{encodeURIComponent('Presentation')}',RowKey='@{encodeURIComponent(items('For_each_3')['presentation'])}')",
+													"retryPolicy": {
+														"type": "exponential",
+														"count": 10,
+														"interval": "PT7S"
+													}
+												},
+												"runAfter": {
+													"Get_State": [
+														"Succeeded"
+													]
+												}
+											},
+											"Get_Species": {
+												"type": "Http",
+												"inputs": {
+													"uri": "@{parameters('BlobStorage')}/mmorefdata(PartitionKey='Species',RowKey='@{encodeURIComponent(items('For_each_3')['species'])}')",
+													"method": "GET",
+													"headers": {
+														"Accept": "application/json",
+														"x-ms-version": "2019-07-07"
+													},
+													"authentication": {
+														"audience": "https://storage.azure.com",
+														"type": "ManagedServiceIdentity"
+													},
+													"retryPolicy": {
+														"type": "exponential",
+														"count": 10,
+														"interval": "PT7S"
+													}
+												}
+											},
+											"Get_State": {
+												"type": "Http",
+												"inputs": {
+													"uri": "@{parameters('BlobStorage')}/mmorefdata(PartitionKey='State',RowKey='@{encodeURIComponent(items('For_each_3')['state'])}')",
+													"method": "GET",
+													"headers": {
+														"Accept": "application/json",
+														"x-ms-version": "2019-07-07"
+													},
+													"authentication": {
+														"audience": "https://storage.azure.com",
+														"type": "ManagedServiceIdentity"
+													},
+													"retryPolicy": {
+														"type": "exponential",
+														"count": 10,
+														"interval": "PT7S"
+													}
+												},
+												"runAfter": {
+													"Get_Landing_Status": [
+														"Succeeded"
+													]
+												}
+											},
+											"List_records_6": {
+												"type": "ApiConnection",
+												"inputs": {
+													"host": {
+														"connection": {
+															"referenceName": "commondataservice"
+														}
+													},
+													"method": "get",
+													"path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_landingses'))}/items",
+													"queries": {
+														"$filter": "_mmofe_documentid_value eq '@{variables('DocumentId')}' and mmofe_name eq '@{items('For_each_3')['id']}' and mmofe_numberoftotalsubmissions eq @{outputs('NumberOfTotalSubmission')}",
+														"$top": 1
+													}
+												},
+												"runAfter": {
+													"NumberOfTotalSubmission": [
+														"SUCCEEDED"
+													]
+												}
+											},
+											"PresentationId": {
+												"type": "Compose",
+												"inputs": "@body('Get_Presentation')['id']",
+												"runAfter": {
+													"StateId": [
+														"Succeeded"
+													]
+												}
+											},
+											"Source": {
+												"type": "Compose",
+												"inputs": "@if(empty(item()?['source']),null,if(equals(item()?['source'],'LANDING_DECLARATION'),961040001,if(equals(item()?['source'],'CATCH_RECORDING'),961040002,if(equals(item()?['source'],'ELOG'),961040000,null))))",
+												"runAfter": {
+													"PresentationId": [
+														"SUCCEEDED"
+													]
+												}
+											},
+											"SpeciesId": {
+												"type": "Compose",
+												"inputs": "@body('Get_Species')['id']",
+												"runAfter": {
+													"Get_Presentation": [
+														"Succeeded"
+													]
+												}
+											},
+											"StateId": {
+												"type": "Compose",
+												"inputs": "@body('Get_State')['id']",
+												"runAfter": {
+													"ValidationStatusId": [
+														"Succeeded"
+													]
+												}
+											},
+											"ValidationStatusId": {
+												"type": "Compose",
+												"inputs": "@body('Get_Landing_Status')['id']",
+												"runAfter": {
+													"ValidationStatusRetro": [
+														"Succeeded"
+													]
+												}
+											},
+											"ValidationStatusRetro": {
+												"type": "Compose",
+												"inputs": "@if(and(or(equals('7d04d01c-d38f-ee11-8179-6045bd905f18', body('Get_Landing_Status')?['id']), equals('3805cb04-d38f-ee11-8179-6045bd905f18', body('Get_Landing_Status')?['id']), equals('954f914e-cd8e-ee11-8179-6045bd905d39', body('Get_Landing_Status')?['id'])),equals(item()['landingOutcomeAtSubmission'],'Success'), equals(item()['is14DayLimitReached'],false) ,true), '83770889-abc5-ea11-a812-000d3a20caa3', '')",
+												"runAfter": {
+													"SpeciesId": [
+														"Succeeded"
+													]
+												}
+											},
+											"VesselAdmin": {
+												"type": "Compose",
+												"inputs": "@if( contains(string( item() ),'vesselAdministration'), if(equals(item()['vesselAdministration'],'England'),961040000, if(equals(item()['vesselAdministration'],'Scotland'),961040001,if(equals(item()['vesselAdministration'],'Wales'),961040002,if(equals(item()['vesselAdministration'],'Northern Ireland'),961040003,if(equals(item()['vesselAdministration'],'Isle of Man'),961040004,if(equals(item()['vesselAdministration'],'Jersey'),961040005,if(equals(item()['vesselAdministration'],'Guernsey'),961040006,null))))))),null)",
+												"runAfter": {
+													"Source": [
+														"Succeeded"
+													]
+												}
+											},
+											"NumberOfTotalSubmission": {
+												"type": "Compose",
+												"inputs": "@if(contains(string(item()),'numberOfTotalSubmissions'), item()['numberOfTotalSubmissions'],null)",
+												"runAfter": {
+													"VesselAdmin": [
+														"Succeeded"
+													]
+												}
+											}
+										}
+									}
+								},
+								"runtimeConfiguration": {
+									"concurrency": {
+										"repetitions": 20
+									}
+								}
+							}
+						},
+						"runAfter": {
+							"Set_Iteration": [
+								"Succeeded"
+							]
+						}
+					},
+					"Complete_the_message_in_a_queue": {
+						"type": "ApiConnection",
+						"description": "Settle the source landing queue message only after successful landing processing.",
+						"inputs": {
+							"host": {
+								"connection": {
+									"referenceName": "servicebus"
+								}
+							},
+							"method": "delete",
+							"path": "/@{encodeURIComponent(encodeURIComponent('landing-queue'))}/messages/complete",
+							"queries": {
+								"lockToken": "@triggerBody()?['LockToken']",
+								"queueType": "Main",
+								"sessionId": "@triggerBody()?['SessionId']"
+							}
+						},
+						"runAfter": {
+							"Create_or_Update_Landings": [
+								"Succeeded"
+							]
+						},
+						"trackedProperties": {
+							"correlationId": "@{coalesce(variables('CorrelationId'), trigger().clientTrackingId, '')}",
+							"documentNumber": "@{coalesce(outputs('Parse_Payload_to_Object')?['documentNumber'], variables('Payload')?['documentNumber'], variables('Payload')?['landings']?[0]?['documentNumber'], '')}",
+							"stage": "landing-creation",
+							"messageAction": "complete"
+						}
+					}
+				},
+				"runAfter": {
+					"Initialize_Retrospective_Period_Complete": [
+						"Succeeded"
+					]
+				}
+			},
+			"Handle_Failure": {
+				"type": "Scope",
+				"description": "Error handler. If landing processing fails, abandon the source message for redelivery.",
+				"actions": {
+					"Log_Failure": {
+						"type": "Compose",
+						"inputs": {
+							"correlationId": "@coalesce(variables('CorrelationId'), trigger().clientTrackingId)",
+							"documentId": "@variables('DocumentId')",
+							"caseId": "@variables('CaseId')",
+							"stage": "landing-creation",
+							"outcome": "failed",
+							"messageAction": "abandon",
+							"result": "@result('Process_Landings_And_Complete')"
+						},
+						"runAfter": {}
+					},
+					"Abandon_the_message_in_a_queue": {
+						"type": "ApiConnection",
+						"inputs": {
+							"host": {
+								"connection": {
+									"referenceName": "servicebus"
+								}
+							},
+							"method": "post",
+							"path": "/@{encodeURIComponent(encodeURIComponent('landing-queue'))}/messages/abandon",
+							"queries": {
+								"lockToken": "@triggerBody()?['LockToken']",
+								"queueType": "Main",
+								"sessionId": "@triggerBody()?['SessionId']"
+							}
+						},
+						"runAfter": {
+							"Log_Failure": [
+								"Succeeded"
+							]
+						},
+						"trackedProperties": {
+							"correlationId": "@{coalesce(variables('CorrelationId'), trigger().clientTrackingId, '')}",
+							"documentId": "@{coalesce(variables('DocumentId'), '')}",
+							"stage": "landing-creation",
+							"messageAction": "abandon"
+						}
+					}
+				},
+				"runAfter": {
+					"Process_Landings_And_Complete": [
+						"Failed",
+						"Skipped",
+						"TimedOut"
+					]
+				}
+			}
+		},
+		"outputs": {}
+	},
+	"kind": "Stateful"
+}

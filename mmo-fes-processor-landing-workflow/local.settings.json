@@ -1,0 +1,9 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "APP_KIND": "workflowapp",
+    "ProjectDirectoryPath": "c:\\projects\\Defra_project\\DEFRA_FES\\Defra-MMO-FES\\mmo-fes-core-infra-rtl\\bicepInfraTemplates\\modules\\workflow\\mmo-fes-processor-landing-workflow",
+    "FUNCTIONS_WORKER_RUNTIME": "node"
+  }
+}
