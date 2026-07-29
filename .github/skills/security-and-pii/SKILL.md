@@ -46,6 +46,5 @@ Security and personal-data rules for MMO FES Azure Logic Apps (Standard) workflo
 
 ## References
 
-- [defra-standards skill](../defra-standards/SKILL.md)
 - [Defra security standards](https://github.com/DEFRA/software-development-standards/blob/main/docs/standards/security_standards.md)
 - [OWASP Secure Coding Practices](https://owasp.org/www-project-secure-coding-practices-quick-reference-guide/)

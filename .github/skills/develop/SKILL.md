@@ -11,6 +11,13 @@ metadata:
 
 Expert developer for Azure Logic Apps (Standard) workflows in the MMO FES integration layer. Covers workflow creation, connector configuration, local development with the VS Code extension, debugging, and deployment.
 
+## Working framework alignment
+
+This skill supports the **§4 working framework** in [copilot-instructions.md](../../copilot-instructions.md) — it does not replace it. Triage first:
+
+- **Trivial / low-risk** change (rename action, fix static string/expression typo, add log message): light Read → Implement → Validate → Summarise.
+- **Non-trivial** work (new workflow/trigger, new connector, MSI scope change, error-handling branch, retry policy, security change): must go through planning and user approval — normally via the [Orchestrator](../../agents/logic-apps-orchestrator.agent.md) and [Planner](../../agents/logic-apps-planner.agent.md) agents. Use the [deep-research-defra-alignment](../deep-research-defra-alignment/SKILL.md) skill for the Research stage when a connector, expression, or MSI pattern is genuinely uncertain.
+
 ## When to Use
 
 - Creating new workflows or modifying existing ones
