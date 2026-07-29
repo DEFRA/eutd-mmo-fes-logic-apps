@@ -19,6 +19,7 @@ trigger:
       - "develop"
       - "hotfix/*"
       - "feature/*"
+      - "gh-readonly-queue/*"
   paths:
     exclude:
       - ".github/**"
