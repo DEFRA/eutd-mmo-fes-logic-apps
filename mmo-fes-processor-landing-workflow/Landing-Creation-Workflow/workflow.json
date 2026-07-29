@@ -759,7 +759,8 @@
 													},
 													"authentication": {
 														"audience": "https://storage.azure.com",
-														"type": "ManagedServiceIdentity"
+														"type": "ManagedServiceIdentity",
+														"identity": "@appsetting('MANAGED_IDENTITY_RESOURCE_ID')"
 													},
 													"retryPolicy": {
 														"type": "exponential",
@@ -788,7 +789,8 @@
 													},
 													"authentication": {
 														"audience": "https://storage.azure.com",
-														"type": "ManagedServiceIdentity"
+														"type": "ManagedServiceIdentity",
+														"identity": "@appsetting('MANAGED_IDENTITY_RESOURCE_ID')"
 													},
 													"path": "/Tables/@{encodeURIComponent('mmorefdata')}/entities(PartitionKey='@{encodeURIComponent('Presentation')}',RowKey='@{encodeURIComponent(items('For_each_3')['presentation'])}')",
 													"retryPolicy": {
@@ -814,7 +816,8 @@
 													},
 													"authentication": {
 														"audience": "https://storage.azure.com",
-														"type": "ManagedServiceIdentity"
+														"type": "ManagedServiceIdentity",
+														"identity": "@appsetting('MANAGED_IDENTITY_RESOURCE_ID')"
 													},
 													"retryPolicy": {
 														"type": "exponential",
@@ -834,7 +837,8 @@
 													},
 													"authentication": {
 														"audience": "https://storage.azure.com",
-														"type": "ManagedServiceIdentity"
+														"type": "ManagedServiceIdentity",
+														"identity": "@appsetting('MANAGED_IDENTITY_RESOURCE_ID')"
 													},
 													"retryPolicy": {
 														"type": "exponential",
@@ -957,6 +961,71 @@
 							]
 						}
 					},
+					"Build_Handoff_Message": {
+						"type": "Compose",
+						"description": "Versioned hand-off envelope published to catches-products-queue for the downstream catches/products stage.",
+						"inputs": {
+							"schemaVersion": "1.0",
+							"messageType": "LandingsReadyForCatchesProducts",
+							"stage": "landing-creation",
+							"correlationId": "@variables('CorrelationId')",
+							"documentNumber": "@coalesce(outputs('Parse_Payload_to_Object')?['documentNumber'], variables('Payload')?['documentNumber'], variables('Payload')?['landings']?[0]?['documentNumber'], '')",
+							"idempotencyKey": "@{coalesce(outputs('Parse_Payload_to_Object')?['documentNumber'], variables('Payload')?['documentNumber'], variables('Payload')?['landings']?[0]?['documentNumber'], 'unknown')}-@{string(variables('Iteration'))}",
+							"documentId": "@variables('DocumentId')",
+							"caseId": "@variables('CaseId')",
+							"customerId": "@variables('CustomerId')",
+							"customerIdType": "@variables('CustomerIdType')",
+							"caseTypeId": "@coalesce(outputs('Parse_Payload_to_Object')?['caseTypeId'], '')",
+							"caseTypeId2": "@coalesce(outputs('Parse_Payload_to_Object')?['caseTypeId2'], '')",
+							"caseStatusAtSubmission": "@coalesce(outputs('Parse_Payload_to_Object')?['caseStatusAtSubmission'], '')",
+							"devolvedAdministrationId": "@coalesce(outputs('Parse_Payload_to_Object')?['devolvedAdministrationId'], '')",
+							"cloneDocId": "@coalesce(outputs('Parse_Payload_to_Object')?['cloneDocId'], '')",
+							"iteration": "@variables('Iteration')",
+							"numberOfFailedSubmissions": "@int(coalesce(outputs('Parse_Payload_to_Object')?['numberOfFailedSubmissions'], 0))",
+							"payload": "@variables('Payload')"
+						},
+						"runAfter": {
+							"Create_or_Update_Landings": [
+								"Succeeded"
+							]
+						}
+					},
+					"Publish_to_catches-products-queue": {
+						"type": "ApiConnection",
+						"description": "Send the landing hand-off envelope to the catches/products stage.",
+						"inputs": {
+							"host": {
+								"connection": {
+									"referenceName": "servicebus"
+								}
+							},
+							"method": "post",
+							"path": "/@{encodeURIComponent(encodeURIComponent('catches-products-queue'))}/messages",
+							"body": {
+								"ContentData": "@{base64(string(outputs('Build_Handoff_Message')))}",
+								"ContentType": "application/json",
+								"CorrelationId": "@variables('CorrelationId')",
+								"SessionId": "@coalesce(outputs('Parse_Payload_to_Object')?['documentNumber'], variables('Payload')?['documentNumber'], variables('Payload')?['landings']?[0]?['documentNumber'], triggerBody()?['SessionId'])",
+								"Properties": {
+									"correlationId": "@variables('CorrelationId')",
+									"documentNumber": "@coalesce(outputs('Parse_Payload_to_Object')?['documentNumber'], variables('Payload')?['documentNumber'], variables('Payload')?['landings']?[0]?['documentNumber'], '')",
+									"stage": "landing-creation",
+									"messageType": "LandingsReadyForCatchesProducts"
+								}
+							}
+						},
+						"runAfter": {
+							"Build_Handoff_Message": [
+								"Succeeded"
+							]
+						},
+						"trackedProperties": {
+							"correlationId": "@{coalesce(trigger().clientTrackingId, triggerBody()?['CorrelationId'], triggerBody()?['Properties']?['correlationId'], '')}",
+							"documentNumber": "@{coalesce(json(base64ToString(triggerBody()?['ContentData']))?['documentNumber'], json(base64ToString(triggerBody()?['ContentData']))?['payload']?['documentNumber'], json(base64ToString(triggerBody()?['ContentData']))?['payload']?['landings']?[0]?['documentNumber'], '')}",
+							"stage": "landing-creation",
+							"messageAction": "handoff"
+						}
+					},
 					"Complete_the_message_in_a_queue": {
 						"type": "ApiConnection",
 						"description": "Settle the source landing queue message only after successful landing processing.",
@@ -975,13 +1044,13 @@
 							}
 						},
 						"runAfter": {
-							"Create_or_Update_Landings": [
+							"Publish_to_catches-products-queue": [
 								"Succeeded"
 							]
 						},
 						"trackedProperties": {
-							"correlationId": "@{coalesce(variables('CorrelationId'), trigger().clientTrackingId, '')}",
-							"documentNumber": "@{coalesce(outputs('Parse_Payload_to_Object')?['documentNumber'], variables('Payload')?['documentNumber'], variables('Payload')?['landings']?[0]?['documentNumber'], '')}",
+							"correlationId": "@{coalesce(trigger().clientTrackingId, triggerBody()?['CorrelationId'], triggerBody()?['Properties']?['correlationId'], '')}",
+							"documentNumber": "@{coalesce(json(base64ToString(triggerBody()?['ContentData']))?['documentNumber'], json(base64ToString(triggerBody()?['ContentData']))?['payload']?['documentNumber'], json(base64ToString(triggerBody()?['ContentData']))?['payload']?['landings']?[0]?['documentNumber'], '')}",
 							"stage": "landing-creation",
 							"messageAction": "complete"
 						}
@@ -1032,8 +1101,8 @@
 							]
 						},
 						"trackedProperties": {
-							"correlationId": "@{coalesce(variables('CorrelationId'), trigger().clientTrackingId, '')}",
-							"documentId": "@{coalesce(variables('DocumentId'), '')}",
+							"correlationId": "@{coalesce(trigger().clientTrackingId, triggerBody()?['CorrelationId'], triggerBody()?['Properties']?['correlationId'], '')}",
+							"documentId": "@{coalesce(json(base64ToString(triggerBody()?['ContentData']))?['documentId'], '')}",
 							"stage": "landing-creation",
 							"messageAction": "abandon"
 						}

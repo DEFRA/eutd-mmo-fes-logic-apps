@@ -1930,16 +1930,25 @@
                     },
                     "Build_Handoff_Message": {
                         "type": "Compose",
-                        "description": "Versioned hand-off envelope published to document-case-queue for the downstream landings/catches stage.",
+                        "description": "Versioned hand-off envelope published to landing-queue for the downstream landings stage.",
                         "inputs": {
                             "schemaVersion": "1.0",
-                            "messageType": "DocumentCaseCreated",
+                            "messageType": "DocumentCaseReadyForLandings",
                             "stage": "document-case-creation",
                             "correlationId": "@variables('CorrelationId')",
                             "documentNumber": "@variables('DocumentNumber')",
                             "idempotencyKey": "@{variables('DocumentNumber')}-@{string(variables('Iteration'))}",
                             "documentId": "@variables('DocumentId')",
                             "caseId": "@variables('CaseId')",
+                            "customerId": "@variables('CustomerId')",
+                            "customerIdType": "@variables('CustomerIdType')",
+                            "caseTypeId": "@variables('CaseTypeId')",
+                            "caseTypeId2": "@variables('CaseTypeId2')",
+                            "caseStatusAtSubmission": "@variables('CaseStatusAtSubmission')",
+                            "devolvedAdministrationId": "@variables('DevolvedAdministrationId')",
+                            "cloneDocId": "@variables('CloneDocId')",
+                            "iteration": "@variables('Iteration')",
+                            "numberOfFailedSubmissions": "@variables('NumberOfFailedSubmissions')",
                             "payload": "@variables('Payload')"
                         },
                         "runAfter": {
@@ -1958,17 +1967,17 @@
                                 }
                             },
                             "method": "post",
-                            "path": "/@{encodeURIComponent(encodeURIComponent('document-case-queue'))}/messages",
+                            "path": "/@{encodeURIComponent(encodeURIComponent('landing-queue'))}/messages",
                             "body": {
                                 "ContentData": "@{base64(string(outputs('Build_Handoff_Message')))}",
                                 "ContentType": "application/json",
-                                "CorrelationId": "@variables('CorrelationId')",
+                                "C orrelationId": "@variables('CorrelationId')",
                                 "SessionId": "@variables('DocumentNumber')",
                                 "Properties": {
                                     "correlationId": "@variables('CorrelationId')",
                                     "documentNumber": "@variables('DocumentNumber')",
                                     "stage": "document-case-creation",
-                                    "messageType": "DocumentCaseCreated"
+                                    "messageType": "DocumentCaseReadyForLandings"
                                 }
                             }
                         },
