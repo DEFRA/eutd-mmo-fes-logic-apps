@@ -61,6 +61,54 @@ All connections authenticate via **Managed Service Identity (MSI)**.
 
 Pipeline in `workflowDeployment.yaml` extends `DEFRA/eutd-mmo-fes-pipeline-common` template (`/includes/workflow-deployment.yaml`). Triggers on `main`, `develop`, `hotfix/*`, `feature/*` branches.
 
+## Standards precedence (highest wins)
+
+When guidance conflicts, follow this order:
+
+1. **DEFRA Software Development Standards** (mandatory) — https://defra.github.io/software-development-standards/
+2. **DEFRA Digital Service Manual** — https://digital.defra.gov.uk/service-manual
+3. **GOV.UK Service Standard & Service Manual (GDS)** — https://www.gov.uk/service-manual
+4. **Community best practice** — [OWASP Secure Coding Practices](https://owasp.org/www-project-secure-coding-practices-quick-reference-guide/), [12-factor](https://12factor.net/), widely-adopted Azure Logic Apps patterns
+
+> **DEFRA takes precedence over GDS. GDS takes precedence over community guidance.** Any deviation from a DEFRA standard MUST be raised as a formal exception through DEFRA's architectural governance (Delivery Architecture team: `delivery.architecture@defra.gov.uk`).
+
+## The working framework (Triage → Read → Research → Plan Handoff → Plan Validation Research → Approval → Implement → Test → Iterate → Summarise)
+
+This section is the **single source of truth** for the working loop. The custom agents ([Orchestrator](.github/agents/logic-apps-orchestrator.agent.md), [Planner](.github/agents/logic-apps-planner.agent.md), [Developer](.github/agents/logic-apps-developer.agent.md) and [Reviewer](.github/agents/logic-apps-reviewer.agent.md)) reference it and **must not restate or fork it**.
+
+Logic Apps are **declarative JSON workflow definitions** — there are no unit tests, coverage tiers, or compiled artefacts. "Implement" means authoring or modifying `workflow.json`, `connections.json`, and `parameters.json`. "Test / Validate" means confirming JSON is structurally valid, the `runAfter` DAG is correct, and the approved deployment pipeline passes.
+
+**Triage first — pick the right path by size and risk:**
+
+- **Trivial / low-risk** (renaming an action, updating a static string parameter, adding a log message, fixing a typo in an expression): skip the planner and heavy research. Do a light **Read → Implement → Validate → Summarise**, and research only the specific point that is genuinely uncertain.
+- **Non-trivial** (new workflow or trigger, new connector or managed connection, new managed identity scope, error-handling branch, retry policy change, parameterisation change, security/MSI change, or anything affecting data correctness or the deployment pipeline): run the full loop below.
+
+Non-trivial loop:
+
+1. **Read** — Read the relevant `workflow.json`, `connections.json`, `parameters.json`, and `host.json` before acting. Map the `runAfter` dependency graph. Never assume; verify.
+2. **Research** — Do thorough, risk-scoped research in the open and validate findings against DEFRA/GDS and Azure Logic Apps guidance. Cite sources.
+3. **Clarify** — Ask the user targeted questions whenever requirements are ambiguous or missing. Do not guess at intent.
+4. **Plan handoff** — Delegate planning to the [Planner - Logic Apps](.github/agents/logic-apps-planner.agent.md) agent. The planning agent returns the complete implementation plan.
+5. **Plan validation research** — Validate the plan against DEFRA/GDS and Azure Logic Apps guidance, **focusing on the steps the planner flagged as risky** (unfamiliar connectors, MSI scopes, expression syntax, policy). Send targeted revisions back to the planner.
+6. **Approval** — Present the complete validated plan to the user and obtain explicit approval before implementation. **Cap the plan → validate → approve → implement replanning cycle at 3 iterations**.
+7. **Implement** — Deliver one task at a time from the approved plan. Author or modify `workflow.json`, `connections.json`, and `parameters.json`. When a significant design decision is made, capture it as an ADR and update docs **where the repo already keeps them**.
+8. **Test / Validate** — Validate JSON structure → verify `runAfter` DAG integrity → confirm no secrets in committed files → confirm the approved deployment pipeline passes. No `npm test` step.
+9. **Iterate** — Refine until the user is satisfied.
+10. **Summarise** — End with a detailed **executive summary** of what changed, why, how it was validated, and any follow-ups or risks.
+
+## Workflow agents
+
+Non-trivial work is coordinated through four custom agents that all run the framework above:
+
+| Agent | Role |
+|-------|------|
+| [Orchestrator - Logic Apps](.github/agents/logic-apps-orchestrator.agent.md) | Plans, delegates, verifies and reports; owns the Yes/No user-approval gate. Does **not** implement. |
+| [Planner - Logic Apps](.github/agents/logic-apps-planner.agent.md) | Internal planning subagent; produces the approval-ready plan and the research behind it. |
+| [Developer - Logic Apps](.github/agents/logic-apps-developer.agent.md) | Implements an already-approved plan end-to-end: workflow JSON authoring, connector configuration, parameterisation. |
+| [Reviewer - Logic Apps](.github/agents/logic-apps-reviewer.agent.md) | Read-only review against DEFRA standards and workflow best practices; reports findings by severity. |
+
+Research (§4.2) and plan-validation research (§4.5) use the [deep-research-defra-alignment](.github/skills/deep-research-defra-alignment/SKILL.md) skill. The [Speckit](.github/agents) agents (`speckit.*`) are a separate spec-driven toolset and are **not** part of this workflow.
+
 ## Skills
 
 Use `/develop` for implementing, modifying, or researching Logic Apps workflows. Use `/review` for reviewing workflow definitions and connections.
