@@ -140,7 +140,8 @@
                         "inputs": {
                             "authentication": {
                                 "audience": "https://storage.azure.com",
-                                "type": "ManagedServiceIdentity"
+                                "type": "ManagedServiceIdentity",
+                                "identity": "@appsetting('MANAGED_IDENTITY_RESOURCE_ID')"
                             },
                             "body": {
                                 "id": "@items('Insert_Case_Types_into_DB')?['mmofe_casetypeid']"
@@ -170,7 +171,8 @@
                         "inputs": {
                             "authentication": {
                                 "audience": "https://storage.azure.com",
-                                "type": "ManagedServiceIdentity"
+                                "type": "ManagedServiceIdentity",
+                                "identity": "@appsetting('MANAGED_IDENTITY_RESOURCE_ID')"
                             },
                             "body": {
                                 "id": "@items('Insert_Devolved_Administrations_into_DB')?['mmofe_devolvedadministrationid']"
@@ -200,7 +202,8 @@
                         "inputs": {
                             "authentication": {
                                 "audience": "https://storage.azure.com",
-                                "type": "ManagedServiceIdentity"
+                                "type": "ManagedServiceIdentity",
+                                "identity": "@appsetting('MANAGED_IDENTITY_RESOURCE_ID')"
                             },
                             "body": {
                                 "id": "@items('Insert_Landing_Statuses_into_DB')?['mmofe_validationstatusid']"
@@ -230,7 +233,8 @@
                         "inputs": {
                             "authentication": {
                                 "audience": "https://storage.azure.com",
-                                "type": "ManagedServiceIdentity"
+                                "type": "ManagedServiceIdentity",
+                                "identity": "@appsetting('MANAGED_IDENTITY_RESOURCE_ID')"
                             },
                             "body": {
                                 "id": "@items('Insert_Presentations_into_DB')?['mmofe_presentationid']"
@@ -260,7 +264,8 @@
                         "inputs": {
                             "authentication": {
                                 "audience": "https://storage.azure.com",
-                                "type": "ManagedServiceIdentity"
+                                "type": "ManagedServiceIdentity",
+                                "identity": "@appsetting('MANAGED_IDENTITY_RESOURCE_ID')"
                             },
                             "body": {
                                 "id": "@items('Insert_Species_into_DB')?['mmofe_specieid']"
@@ -295,7 +300,8 @@
                         "inputs": {
                             "authentication": {
                                 "audience": "https://storage.azure.com",
-                                "type": "ManagedServiceIdentity"
+                                "type": "ManagedServiceIdentity",
+                                "identity": "@appsetting('MANAGED_IDENTITY_RESOURCE_ID')"
                             },
                             "body": {
                                 "id": "@items('Insert_States_into_DB')?['mmofe_stateid']"

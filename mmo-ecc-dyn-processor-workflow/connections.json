@@ -5,7 +5,8 @@
                 "id": "/subscriptions/@{appsetting('WORKFLOWS_SUBSCRIPTION_ID')}/providers/Microsoft.Web/locations/@{appsetting('RESOURCEGROUP_LOCATION')}/managedApis/commondataservice"
             },
             "authentication": {
-                "type": "ManagedServiceIdentity"
+                "type": "ManagedServiceIdentity",
+                "identity": "@{appsetting('MANAGED_IDENTITY_RESOURCE_ID')}"
             },
             "connection": {
                 "id": "/subscriptions/@{appsetting('WORKFLOWS_SUBSCRIPTION_ID')}/resourceGroups/@{appsetting('RESOURCEGROUP_NAME')}/providers/Microsoft.Web/connections/@{appsetting('COMMON_API_CONNECTION_NAME')}"
@@ -15,14 +16,23 @@
         },
         "refDataTable": {
             "api": {
-                "id": "/subscriptions/@{appsetting('WORKFLOWS_SUBSCRIPTION_ID')}/providers/Microsoft.Web/locations/@{appsetting('RESOURCEGROUP_LOCATION')}/managedApis/refDataTable"
+                "id": "/subscriptions/@{appsetting('WORKFLOWS_SUBSCRIPTION_ID')}/providers/Microsoft.Web/locations/@{appsetting('RESOURCEGROUP_LOCATION')}/managedApis/azuretables"                
             },
             "authentication": {
-                "type": "ManagedServiceIdentity"
+                "type": "ManagedServiceIdentity",
+                "identity": "@{appsetting('MANAGED_IDENTITY_RESOURCE_ID')}"
             },
             "connection": {
                 "id": "/subscriptions/@{appsetting('WORKFLOWS_SUBSCRIPTION_ID')}/resourceGroups/@{appsetting('RESOURCEGROUP_NAME')}/providers/Microsoft.Web/connections/@{appsetting('REFDATA_STORAGE_CONNECTION_NAME')}"
             },
+            "connectionProperties": {
+                "authentication": {
+                    "audience": "https://storage.azure.com",
+                    "type": "ManagedServiceIdentity",
+                    "identity": "@{appsetting('MANAGED_IDENTITY_RESOURCE_ID')}"
+                }
+            },
+            "connectionRuntimeUrl": "@{appsetting('REFDATATABLE_CONNECTION_RUNTIME_URL')}",
             "displayName": "refDataTable"
         },
         "servicebus": {
@@ -30,7 +40,8 @@
                 "id": "/subscriptions/@{appsetting('WORKFLOWS_SUBSCRIPTION_ID')}/providers/Microsoft.Web/locations/@{appsetting('RESOURCEGROUP_LOCATION')}/managedApis/servicebus"
             },
             "authentication": {
-                "type": "ManagedServiceIdentity"
+                "type": "ManagedServiceIdentity",
+                "identity": "@{appsetting('MANAGED_IDENTITY_RESOURCE_ID')}"
             },
             "connection": {
                 "id": "/subscriptions/@{appsetting('WORKFLOWS_SUBSCRIPTION_ID')}/resourceGroups/@{appsetting('RESOURCEGROUP_NAME')}/providers/Microsoft.Web/connections/@{appsetting('SERVICE_BUS_CONNECTION_NAME')}"
@@ -38,7 +49,8 @@
             "connectionProperties": {
                 "authentication": {
                     "audience": "https://servicebus.azure.net",
-                    "type": "ManagedServiceIdentity"
+                    "type": "ManagedServiceIdentity",
+                    "identity": "@{appsetting('MANAGED_IDENTITY_RESOURCE_ID')}"
                 }
             },
             "connectionRuntimeUrl": "@{appsetting('SERVICEBUS_CONNECTION_RUNTIME_URL')}"
