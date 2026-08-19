@@ -72,42 +72,46 @@ When guidance conflicts, follow this order:
 
 > **DEFRA takes precedence over GDS. GDS takes precedence over community guidance.** Any deviation from a DEFRA standard MUST be raised as a formal exception through DEFRA's architectural governance (Delivery Architecture team: `delivery.architecture@defra.gov.uk`).
 
-## The working framework (Triage → Read → Research → Plan Handoff → Plan Validation Research → Approval → Implement → Test → Iterate → Summarise)
+## The working framework (Triage → Read → Research → Clarify → Plan → Approval → Implement → Test → Iterate → Summarise)
 
-This section is the **single source of truth** for the working loop. The custom agents ([Orchestrator](.github/agents/logic-apps-orchestrator.agent.md), [Planner](.github/agents/logic-apps-planner.agent.md), [Developer](.github/agents/logic-apps-developer.agent.md) and [Reviewer](.github/agents/logic-apps-reviewer.agent.md)) reference it and **must not restate or fork it**.
+This section is the **single source of truth** for the working loop. The custom agents ([Orchestrator](.github/agents/logic-apps-orchestrator.agent.md), [Planner](.github/agents/logic-apps-planner.agent.md), [Developer](.github/agents/logic-apps-developer.agent.md) and [Reviewer](.github/agents/logic-apps-reviewer.agent.md)) reference it and **must not restate or fork it**. The guiding principle is **match effort to risk**: do the least work that still delivers the change safely and to standard.
 
 Logic Apps are **declarative JSON workflow definitions** — there are no unit tests, coverage tiers, or compiled artefacts. "Implement" means authoring or modifying `workflow.json`, `connections.json`, and `parameters.json`. "Test / Validate" means confirming JSON is structurally valid, the `runAfter` DAG is correct, and the approved deployment pipeline passes.
 
-**Triage first — pick the right path by size and risk:**
+**Triage first — pick one of three gears by size and risk:**
 
-- **Trivial / low-risk** (renaming an action, updating a static string parameter, adding a log message, fixing a typo in an expression): skip the planner and heavy research. Do a light **Read → Implement → Validate → Summarise**, and research only the specific point that is genuinely uncertain.
-- **Non-trivial** (new workflow or trigger, new connector or managed connection, new managed identity scope, error-handling branch, retry policy change, parameterisation change, security/MSI change, or anything affecting data correctness or the deployment pipeline): run the full loop below.
+- **Trivial** (renaming an action, updating a static string parameter, adding a log message, fixing a typo in an expression): skip the planner, research and review. Do a light **Read → Implement → Validate → Summarise**, and research only the one point that is genuinely uncertain.
+- **Standard** (a normal action/expression change or parameter update with **no** new connector, MSI scope, or security surface): use a **lightweight inline plan** (a short Objective · Plan · Files · Validation · Risks note from the Developer agent — no heavyweight Planner), get approval, then implement and validate. Run a **single** risk-scoped research pass **only if** something is genuinely uncertain.
+- **Complex** (new workflow or trigger, new connector or managed connection, new managed identity scope, error-handling branch, retry policy change, parameterisation change, a security/MSI change, or anything affecting data correctness or the deployment pipeline): run the full loop with the Planner agent below.
 
-Non-trivial loop:
+**Manual override.** The user can force a gear — e.g. "treat this as trivial", "just a lightweight/standard plan", "force the full plan", "skip the planner" — and that instruction wins over the automatic classification. Always honour a request for **more** rigour. When the user asks for **less** rigour than the risk warrants, comply but **briefly flag the risk first**, and never drop the approval gate or security for a change that genuinely touches connectors, MSI scope, error handling or the deployment pipeline.
+
+The loop (Standard and Complex; Trivial uses the light path above):
 
 1. **Read** — Read the relevant `workflow.json`, `connections.json`, `parameters.json`, and `host.json` before acting. Map the `runAfter` dependency graph. Never assume; verify.
-2. **Research** — Do thorough, risk-scoped research in the open and validate findings against DEFRA/GDS and Azure Logic Apps guidance. Cite sources.
+2. **Research (single pass, risk-scoped)** — When something is genuinely uncertain — an unfamiliar connector, MSI scope, expression syntax, or DEFRA/GDS policy — do **one** thorough, risk-scoped research pass in the open and validate findings against DEFRA/GDS and Azure Logic Apps guidance. Cite sources. **Do not run a second, separate validation research round** — the plan is checked against these same cited sources.
 3. **Clarify** — Ask the user targeted questions whenever requirements are ambiguous or missing. Do not guess at intent.
-4. **Plan handoff** — Delegate planning to the [Planner - Logic Apps](.github/agents/logic-apps-planner.agent.md) agent. The planning agent returns the complete implementation plan.
-5. **Plan validation research** — Validate the plan against DEFRA/GDS and Azure Logic Apps guidance, **focusing on the steps the planner flagged as risky** (unfamiliar connectors, MSI scopes, expression syntax, policy). Send targeted revisions back to the planner.
-6. **Approval** — Present the complete validated plan to the user and obtain explicit approval before implementation. **Cap the plan → validate → approve → implement replanning cycle at 3 iterations**.
-7. **Implement** — Deliver one task at a time from the approved plan. Author or modify `workflow.json`, `connections.json`, and `parameters.json`. When a significant design decision is made, capture it as an ADR and update docs **where the repo already keeps them**.
-8. **Test / Validate** — Validate JSON structure → verify `runAfter` DAG integrity → confirm no secrets in committed files → confirm the approved deployment pipeline passes. No `npm test` step.
-9. **Iterate** — Refine until the user is satisfied.
-10. **Summarise** — End with a detailed **executive summary** of what changed, why, how it was validated, and any follow-ups or risks.
+4. **Plan** — For **Complex** work, delegate planning to the [Planner - Logic Apps](.github/agents/logic-apps-planner.agent.md) agent, which returns a complete plan with its research already cited. For **Standard** work, produce the lightweight inline plan directly — no separate planning agent. Either way, **check** the plan's risky steps are covered and cited; only send a targeted revision back if a genuine gap is found.
+5. **Approval** — Present the plan to the user and obtain explicit approval before implementation. **Cap the plan → approve → implement cycle at 3 iterations**.
+6. **Implement** — Deliver one task at a time from the approved plan. Author or modify `workflow.json`, `connections.json`, and `parameters.json`. When a significant design decision is made, capture it as an ADR and update docs **where the repo already keeps them**.
+7. **Test / Validate** — Validate JSON structure → verify `runAfter` DAG integrity → confirm no secrets in committed files → confirm the approved deployment pipeline passes. No `npm test` step.
+8. **Iterate** — Refine until the user is satisfied.
+9. **Summarise** — End with a detailed **executive summary** of what changed, why, how it was validated, and any follow-ups or risks.
+
+**Code review is optional and on-request.** A full code review is **not** part of the default loop. Run it only when the user asks for one. At the end of implementation, if no review has been run, **offer** one (a single Yes/No question); invoke the reviewer only on an explicit Yes.
 
 ## Workflow agents
 
-Non-trivial work is coordinated through four custom agents that all run the framework above:
+Standard and Complex work is coordinated through four custom agents that all run the framework above:
 
 | Agent | Role |
 |-------|------|
-| [Orchestrator - Logic Apps](.github/agents/logic-apps-orchestrator.agent.md) | Plans, delegates, verifies and reports; owns the Yes/No user-approval gate. Does **not** implement. |
-| [Planner - Logic Apps](.github/agents/logic-apps-planner.agent.md) | Internal planning subagent; produces the approval-ready plan and the research behind it. |
-| [Developer - Logic Apps](.github/agents/logic-apps-developer.agent.md) | Implements an already-approved plan end-to-end: workflow JSON authoring, connector configuration, parameterisation. |
-| [Reviewer - Logic Apps](.github/agents/logic-apps-reviewer.agent.md) | Read-only review against DEFRA standards and workflow best practices; reports findings by severity. |
+| [Orchestrator - Logic Apps](.github/agents/logic-apps-orchestrator.agent.md) | Plans, delegates, verifies and reports; owns the Yes/No user-approval gate and the end-of-work review offer. Does **not** implement. |
+| [Planner - Logic Apps](.github/agents/logic-apps-planner.agent.md) | Internal planning subagent; produces the approval-ready plan and the single research pass behind it. Invoked for **Complex** work. |
+| [Developer - Logic Apps](.github/agents/logic-apps-developer.agent.md) | Implements an already-approved plan end-to-end: workflow JSON authoring, connector configuration, parameterisation; authors the lightweight inline plan for **Standard** work. |
+| [Reviewer - Logic Apps](.github/agents/logic-apps-reviewer.agent.md) | Read-only review against DEFRA standards and workflow best practices; reports findings by severity. **Optional, on-request only** — not run by default. |
 
-Research (§4.2) and plan-validation research (§4.5) use the [deep-research-defra-alignment](.github/skills/deep-research-defra-alignment/SKILL.md) skill. The [Speckit](.github/agents) agents (`speckit.*`) are a separate spec-driven toolset and are **not** part of this workflow.
+Research (§4.2) uses the [deep-research-defra-alignment](.github/skills/deep-research-defra-alignment/SKILL.md) skill — a single risk-scoped pass run by the **Planner** (Complex work) or the **Developer** (Standard work). The [Speckit](.github/agents) agents (`speckit.*`) are a separate spec-driven toolset and are **not** part of this workflow.
 
 ## Skills
 

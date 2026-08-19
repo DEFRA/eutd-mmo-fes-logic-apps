@@ -15,8 +15,11 @@ Expert developer for Azure Logic Apps (Standard) workflows in the MMO FES integr
 
 This skill supports the **§4 working framework** in [copilot-instructions.md](../../copilot-instructions.md) — it does not replace it. Triage first:
 
-- **Trivial / low-risk** change (rename action, fix static string/expression typo, add log message): light Read → Implement → Validate → Summarise.
-- **Non-trivial** work (new workflow/trigger, new connector, MSI scope change, error-handling branch, retry policy, security change): must go through planning and user approval — normally via the [Orchestrator](../../agents/logic-apps-orchestrator.agent.md) and [Planner](../../agents/logic-apps-planner.agent.md) agents. Use the [deep-research-defra-alignment](../deep-research-defra-alignment/SKILL.md) skill for the Research stage when a connector, expression, or MSI pattern is genuinely uncertain.
+- **Trivial** change (rename action, fix static string/expression typo, add log message): light Read → Implement → Validate → Summarise.
+- **Standard** work (a normal action/expression change or parameter update with no new connector, MSI scope, or security surface): a lightweight inline plan (authored by the Developer, no heavyweight Planner) plus user approval.
+- **Complex** work (new workflow/trigger, new connector, MSI scope change, error-handling branch, retry policy, security change): full planning and user approval — normally via the [Orchestrator](../../agents/logic-apps-orchestrator.agent.md) and [Planner](../../agents/logic-apps-planner.agent.md) agents.
+
+Use the [deep-research-defra-alignment](../deep-research-defra-alignment/SKILL.md) skill for the single, risk-scoped Research pass when a connector, expression, or MSI pattern is genuinely uncertain.
 
 ## When to Use
 

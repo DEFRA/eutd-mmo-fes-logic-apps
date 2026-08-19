@@ -1,6 +1,6 @@
 ---
 name: deep-research-defra-alignment
-description: "Do thorough, risk-scoped research in the open and align findings to the DEFRA standards precedence (DEFRA > GDS > community) for the MMO FES Logic Apps workflows. Use for the Research (§4.2) and Plan validation research (§4.5) stages of the working framework — validating connector patterns, MSI authentication, expression syntax, error-handling policy and DEFRA/GDS requirements, and citing sources before a plan is approved or implemented."
+description: "Do thorough, risk-scoped research in the open and align findings to the DEFRA standards precedence (DEFRA > GDS > community) for the MMO FES Logic Apps workflows. Use for the single, risk-scoped Research (§4.2) stage of the working framework — validating connector patterns, MSI authentication, expression syntax, error-handling policy and DEFRA/GDS requirements, and citing sources before a plan is approved or implemented."
 argument-hint: "e.g. 'validate the Dataverse list-rows OData filter expression the planner flagged' or 'research MSI audience scope for Azure Table Storage in Logic Apps Standard'"
 license: OGL-UK-3.0
 metadata:
@@ -12,18 +12,18 @@ user-invocable: false
 # Deep research & DEFRA alignment
 
 Turn an open question or a flagged plan step into a **sourced, DEFRA-aligned recommendation**. This is the
-**Research (§4.2)** and **Plan validation research (§4.5)** stages of the working framework in
+**single, risk-scoped Research (§4.2)** stage of the working framework in
 [copilot-instructions.md](../../copilot-instructions.md) — it does **not** replace or fork that framework,
-and it never authorises implementation (that still needs user **approval** at §4.6).
+and it never authorises implementation (that still needs user **approval** at §4.5). There is no separate
+plan-validation research round: the plan is checked against these same cited sources.
 
 **Division of labour:**
-- **Planner - Logic Apps** flags which steps are risky or version-sensitive and performs the research.
-- **Developer - Logic Apps** uses this skill for the Research stage (§4.2) when a connector, expression, or MSI pattern is genuinely uncertain.
+- **Planner - Logic Apps** runs this single research pass for **Complex** work and cites sources in its plan.
+- **Developer - Logic Apps** runs this same single pass for **Standard** work (or when invoked without a plan) as its own Research stage (§4.2) when a connector, expression, or MSI pattern is genuinely uncertain.
 
 ## When to use
 
-- **Research (§4.2):** an unfamiliar Logic Apps connector API, expression function, MSI scope, retry policy, or DEFRA/GDS policy point.
-- **Plan validation (§4.5):** validating the steps the Planner flagged as risky before user approval.
+- **Research (§4.2), single pass:** an unfamiliar Logic Apps connector API, expression function, MSI scope, retry policy, or DEFRA/GDS policy point.
 
 **Do NOT use for trivial work** — renaming an action or fixing a static string needs no deep research.
 
