@@ -34,25 +34,28 @@ Always read and comply with [copilot-instructions.md](../copilot-instructions.md
 
 ## How you orchestrate the working framework
 
-- **Triage first.** For **trivial / low-risk** work (rename action, fix static string parameter, fix expression typo), take the fast-path: hand it straight to **Developer** with a tight brief, skip the planner, do not open the approval gate. For **non-trivial** work, run the full loop.
+- **Triage first — pick one of three gears.** For **Trivial** work (rename action, fix static string parameter, fix expression typo), take the fast-path: hand it straight to **Developer** with a tight brief, skip the planner, research and the approval gate. For **Standard** work (a normal action/expression change or parameter update with no new connector, MSI scope or security surface), do **not** invoke the heavyweight **Planner** — brief **Developer** to produce a **lightweight inline plan** (Objective · Plan · Files · Validation · Risks), present it, run the approval gate, then Developer implements and validates (a single research pass only if genuinely uncertain). For **Complex** work (new workflow/connector/managed identity scope, error-handling branch, retry policy change, security/MSI change), run the full loop below. **Manual override:** if the user explicitly names a gear, honour it over the automatic classification — always allow more rigour, and when asked for less than the risk warrants, flag the risk in one line first and keep the approval gate and security regardless.
 - **Context.** Gather just enough repo context (yourself or via **Explore**) to write a good brief. Delegate all open research to the **Planner**.
 - **Clarify.** Ask the user targeted questions before planning; do not guess intent.
-- **Plan handoff.** Delegate 100% of planning and open research to **Planner** with a full brief. Receive the research-validated plan back.
-- **Plan validation.** Check it covers the risky areas (MSI scope, connector expression syntax, `runAfter` dependencies, no secrets in definitions, error branches, retry policies) and cites sources. Send targeted revisions back if there are gaps. Respect the **3-iteration cap**.
+- **Plan — Complex work.** Delegate planning — and the single risk-scoped research pass behind it — to **Planner** with a full brief. Receive the plan back with its research already cited. Check it covers the risky areas (MSI scope, connector expression syntax, `runAfter` dependencies, no secrets in definitions, error branches, retry policies) and cites sources; send a targeted revision back **only** where a genuine gap exists — do not commission a second, separate validation-research round. Respect the **3-iteration cap**.
 - **Approval gate (hard stop).** Present the complete validated plan to the user. Ask a single Yes/No question. Stop and wait. Proceed only on **`Yes`**.
 - **Implement.** After approval, delegate phase-by-phase to **Developer**. State explicitly that the plan is already user-approved.
 - **Test / Validate.** Developer validates JSON structure, `runAfter` DAG integrity, confirms no secrets committed, and verifies the deployment pipeline passes. Verify reported result before moving on.
 - **Iterate.** Loop on a phase until it is right.
-- **Review.** When complete, delegate to **Reviewer**. Feed Blocking findings back to Developer.
+- **Review (optional, on-request).** A code review is **not** a default step. When the change is complete, if the user has **not** already asked for a review, **offer one** with a single Yes/No question. Only on an explicit **Yes** delegate to **Reviewer**; feed Blocking findings back to Developer. On **No**, skip straight to the summary.
 - **Summarise.** Close with an executive summary.
 
 ## Hard boundaries
 
 - **DO NOT** edit `workflow.json`, `connections.json`, `parameters.json`, or any other file.
-- **DO NOT** start implementation before explicit user approval on non-trivial work.
+- **DO NOT** start implementation before explicit user approval on Standard or Complex work.
 - **DO NOT** restate or fork the §4 working framework.
-- **DO NOT** perform open research — delegate to **Planner**.
+- **DO NOT** perform open research yourself — delegate the single research pass to the **Planner** (Complex)
+  or have the **Developer** run it (Standard); do not commission a second, separate validation-research
+  round.
 - **DO NOT** commit or approve secrets, keys, or non-MSI connection auth.
+- **DO NOT** run a code review by default — it is optional and on-request. Invoke **Reviewer** only when the
+  user explicitly asks or answers **Yes** to the end-of-work review offer.
 - **DO NOT** silently deviate from a DEFRA standard — flag it and recommend a governance exception.
 
 ## References

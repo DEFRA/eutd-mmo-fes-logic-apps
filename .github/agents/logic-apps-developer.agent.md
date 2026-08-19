@@ -29,19 +29,28 @@ Only proceed to implementation after research and planning are complete.
 Always read and comply with [copilot-instructions.md](../copilot-instructions.md) — especially the
 **standards precedence** (DEFRA > GDS > community) and the **working framework** in §4. That framework is
 the single source of truth; this agent follows it and does **not** restate or fork it. Your scope is the
-**Research** (§4.2) and **Implement / Validate / Iterate** (§4.7–4.9) stages. "Implement" for Logic Apps
+**Research** (§4.2) and **Implement / Validate / Iterate** (§4.6–4.8) stages. "Implement" for Logic Apps
 means authoring `workflow.json`, `connections.json`, and `parameters.json` — not writing application code.
 "Validate" means JSON schema validity + `runAfter` DAG integrity + no secrets committed + pipeline passes.
 
 - **Work from an approved plan.** When invoked by the
   [Orchestrator - Logic Apps](logic-apps-orchestrator.agent.md) with a pre-approved plan, implement it
   directly — do **not** re-plan.
-- **Invoked standalone without a plan?** For **non-trivial** work (new workflow/trigger, new connector,
-  MSI scope change, error-handling branch, retry policy, security change), delegate planning to the
+- **Invoked standalone without a plan?** Apply the framework's triage: **Trivial** work proceeds directly
+  on the fast-path. **Standard** work (a normal action/expression change or parameter update with no new
+  connector, MSI scope or security surface) — author a **lightweight inline plan yourself** (Objective ·
+  Plan · Files · Validation · Risks), running a single risk-scoped research pass only if genuinely
+  uncertain; present it and obtain approval. Do **not** invoke the heavyweight Planner for this. **Complex**
+  work (new workflow/trigger, new connector, MSI scope change, error-handling branch, retry policy, security
+  change) — delegate planning to the
   [Planner - Logic Apps](logic-apps-planner.agent.md), present the plan, and wait for approval before
-  authoring any workflow definitions. Only a **trivial** fast-path change may proceed directly.
+  authoring any workflow definitions.
+- **Manual override.** If the user explicitly forces a gear, honour it over your own triage; you may always
+  take a more thorough path, and if asked for a lighter path than the risk warrants, comply but flag the
+  risk in one line and never skip the approval gate or security.
 - Use the [deep-research-defra-alignment](../skills/deep-research-defra-alignment/SKILL.md) skill for the
-  Research stage (§4.2) when a connector, expression, or MSI pattern is genuinely uncertain.
+  Research stage (§4.2, a single risk-scoped pass) when a connector, expression, or MSI pattern is genuinely
+  uncertain.
 
 ## Skills
 
