@@ -22,14 +22,14 @@
                     "interval": 30,
                     "frequency": "Second"
                 },
+                "correlation": {
+                    "clientTrackingId": "@coalesce(triggerBody()?['Properties']?['correlationId'], guid())"
+                },
                 "conditions": [],
                 "runtimeConfiguration": {
                     "concurrency": {
-                        "runs": 10
+                        "runs": 2
                     }
-                },
-                "correlation": {
-                    "clientTrackingId": "@coalesce(triggerBody()?['CorrelationId'], guid())"
                 }
             }
         },
@@ -486,6 +486,23 @@
                     ]
                 }
             },
+            "Initialise_ErrorMessage": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "ErrorMessage",
+                            "type": "string",
+                            "value": ""
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Initialize_Temination": [
+                        "Succeeded"
+                    ]
+                }
+            },
             "Process_Document_Case_And_Handoff": {
                 "type": "Scope",
                 "description": "Stage 1 of the split: extract payload values, resolve reference data and exporter, create/update the document and case, then publish the document/case hand-off envelope and complete the source message.",
@@ -495,8 +512,7 @@
                         "inputs": {
                             "name": "Payload",
                             "value": "@outputs('Tranform_Payload')"
-                        },
-                        "runAfter": {}
+                        }
                     },
                     "Set_Landings_Array": {
                         "type": "SetVariable",
@@ -715,7 +731,8 @@
                                     "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_documents'))}/items",
                                     "queries": {
                                         "$filter": "mmofe_name eq '@{variables('CloneDocNo')}'",
-                                        "$top": 1
+                                        "$top": 1,
+                                        "$select": "mmofe_documentid"
                                     }
                                 }
                             },
@@ -768,7 +785,7 @@
                                         "expression": "@outputs('Get_CaseTypeName_from_either_Case_or_Landing_Status')",
                                         "default": {
                                             "actions": {
-                                                "Set_variable_15": {
+                                                "Set_CaseTypeName2_Default": {
                                                     "type": "SetVariable",
                                                     "inputs": {
                                                         "name": "CaseTypeName2",
@@ -780,7 +797,7 @@
                                         "cases": {
                                             "Case": {
                                                 "actions": {
-                                                    "Set_variable_16": {
+                                                    "Set_CaseTypeName2_ValidationSuccess": {
                                                         "type": "SetVariable",
                                                         "inputs": {
                                                             "name": "CaseTypeName2",
@@ -792,7 +809,7 @@
                                             },
                                             "Case_2": {
                                                 "actions": {
-                                                    "Set_variable_20": {
+                                                    "Set_CaseTypeName2_PendingLandingData": {
                                                         "type": "SetVariable",
                                                         "inputs": {
                                                             "name": "CaseTypeName2",
@@ -804,7 +821,7 @@
                                             },
                                             "Case_3": {
                                                 "actions": {
-                                                    "Set_variable_19": {
+                                                    "Set_CaseTypeName2_OveruseFailure": {
                                                         "type": "SetVariable",
                                                         "inputs": {
                                                             "name": "CaseTypeName2",
@@ -852,11 +869,10 @@
                                         "audience": "https://storage.azure.com",
                                         "type": "ManagedServiceIdentity",
                                         "identity": "@appsetting('MANAGED_IDENTITY_RESOURCE_ID')"
-
                                     }
                                 }
                             },
-                            "Condition_5": {
+                            "Has_CaseTypeId": {
                                 "type": "If",
                                 "expression": {
                                     "and": [
@@ -925,7 +941,7 @@
                                     }
                                 }
                             },
-                            "Condition_3": {
+                            "Has_CaseTypeId2": {
                                 "type": "If",
                                 "expression": {
                                     "and": [
@@ -986,7 +1002,7 @@
                                     }
                                 }
                             },
-                            "Condition_6": {
+                            "Has_CaseStatusAtSubmission": {
                                 "type": "If",
                                 "expression": {
                                     "and": [
@@ -1001,7 +1017,7 @@
                                     ]
                                 },
                                 "actions": {
-                                    "Set_variable_3": {
+                                    "Set_CaseStatusAtSubmission": {
                                         "type": "SetVariable",
                                         "inputs": {
                                             "name": "CaseStatusAtSubmission",
@@ -1047,7 +1063,7 @@
                                     }
                                 }
                             },
-                            "Condition_4": {
+                            "Has_DevolvedAdministrationId": {
                                 "type": "If",
                                 "expression": {
                                     "and": [
@@ -1159,11 +1175,6 @@
                                 },
                                 "else": {
                                     "actions": {}
-                                },
-                                "runAfter": {
-                                    "If_AccountId_IS_NOT_null": [
-                                        "Succeeded"
-                                    ]
                                 }
                             },
                             "Mapping_Account": {
@@ -1187,29 +1198,23 @@
                                     ]
                                 },
                                 "actions": {
-                                    "For_each_4": {
-                                        "type": "Foreach",
-                                        "foreach": "@body('Get_Accounts_where_accountid_eq_ExporterNumber')?['value']",
-                                        "actions": {
-                                            "Set_variable": {
-                                                "type": "SetVariable",
-                                                "inputs": {
-                                                    "name": "CustomerId",
-                                                    "value": "@items('For_each_4')?['accountid']"
-                                                }
-                                            },
-                                            "Set_variable_4": {
-                                                "type": "SetVariable",
-                                                "inputs": {
-                                                    "name": "CustomerIdType",
-                                                    "value": "accounts"
-                                                },
-                                                "runAfter": {
-                                                    "Set_variable": [
-                                                        "Succeeded"
-                                                    ]
-                                                }
-                                            }
+                                    "Set_variable": {
+                                        "type": "SetVariable",
+                                        "inputs": {
+                                            "name": "CustomerId",
+                                            "value": "@first(body('Get_Accounts_where_accountid_eq_ExporterNumber')?['value'])?['accountid']"
+                                        }
+                                    },
+                                    "Set_CustomerIdType_From_Account": {
+                                        "type": "SetVariable",
+                                        "inputs": {
+                                            "name": "CustomerIdType",
+                                            "value": "accounts"
+                                        },
+                                        "runAfter": {
+                                            "Set_variable": [
+                                                "Succeeded"
+                                            ]
                                         }
                                     }
                                 },
@@ -1217,6 +1222,9 @@
                                     "actions": {}
                                 },
                                 "runAfter": {
+                                    "If_AccountId_IS_NOT_null": [
+                                        "Succeeded"
+                                    ],
                                     "If_ContactId_IS_NOT_null": [
                                         "Succeeded"
                                     ]
@@ -1259,29 +1267,23 @@
                                     ]
                                 },
                                 "actions": {
-                                    "For_each": {
-                                        "type": "Foreach",
-                                        "foreach": "@body('Get_Contacts_where_contactid_eq_ExporterNumber')?['value']",
-                                        "actions": {
-                                            "Set_variable_12": {
-                                                "type": "SetVariable",
-                                                "inputs": {
-                                                    "name": "CustomerId",
-                                                    "value": "@items('For_each')?['contactid']"
-                                                }
-                                            },
-                                            "Set_variable_13": {
-                                                "type": "SetVariable",
-                                                "inputs": {
-                                                    "name": "CustomerIdType",
-                                                    "value": "contacts"
-                                                },
-                                                "runAfter": {
-                                                    "Set_variable_12": [
-                                                        "Succeeded"
-                                                    ]
-                                                }
-                                            }
+                                    "Set_CustomerId_From_Contact": {
+                                        "type": "SetVariable",
+                                        "inputs": {
+                                            "name": "CustomerId",
+                                            "value": "@first(body('Get_Contacts_where_contactid_eq_ExporterNumber')?['value'])?['contactid']"
+                                        }
+                                    },
+                                    "Set_CustomerIdType_From_Contact": {
+                                        "type": "SetVariable",
+                                        "inputs": {
+                                            "name": "CustomerIdType",
+                                            "value": "contacts"
+                                        },
+                                        "runAfter": {
+                                            "Set_CustomerId_From_Contact": [
+                                                "Succeeded"
+                                            ]
                                         }
                                     }
                                 },
@@ -1289,6 +1291,9 @@
                                     "actions": {}
                                 },
                                 "runAfter": {
+                                    "If_AccountId_IS_NOT_null": [
+                                        "Succeeded"
+                                    ],
                                     "If_ContactId_IS_NOT_null": [
                                         "Succeeded"
                                     ]
@@ -1333,21 +1338,21 @@
                                     ]
                                 },
                                 "actions": {
-                                    "Set_variable_2": {
+                                    "Set_CustomerId_From_ExporterTemp": {
                                         "type": "SetVariable",
                                         "inputs": {
                                             "name": "CustomerId",
                                             "value": "3aad1982-5bb9-ea11-a812-000d3a20caa3"
                                         }
                                     },
-                                    "Set_variable_14": {
+                                    "Set_CustomerIdType_From_ExporterTemp": {
                                         "type": "SetVariable",
                                         "inputs": {
                                             "name": "CustomerIdType",
                                             "value": "accounts"
                                         },
                                         "runAfter": {
-                                            "Set_variable_2": [
+                                            "Set_CustomerId_From_ExporterTemp": [
                                                 "Succeeded"
                                             ]
                                         }
@@ -1375,7 +1380,7 @@
                     "Document": {
                         "type": "Scope",
                         "actions": {
-                            "List_records_3": {
+                            "Query_Document_By_Number": {
                                 "type": "ApiConnection",
                                 "inputs": {
                                     "host": {
@@ -1387,17 +1392,18 @@
                                     "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_documents'))}/items",
                                     "queries": {
                                         "$filter": "mmofe_documentnumber eq '@{variables('DocumentNumber')}'",
-                                        "$top": 1
+                                        "$top": 1,
+                                        "$select": "mmofe_documentid,mmofe_processstatus,mmofe_documenturl,statuscode"
                                     }
                                 }
                             },
-                            "Condition_2": {
+                            "Has_Existing_Document": {
                                 "type": "If",
                                 "expression": {
                                     "and": [
                                         {
                                             "equals": [
-                                                "@length(body('List_records_3')?['value'])",
+                                                "@length(body('Query_Document_By_Number')?['value'])",
                                                 0
                                             ]
                                         }
@@ -1428,15 +1434,16 @@
                                             },
                                             "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_documents'))}/items"
                                         },
-                                       "trackedProperties": {
-                                                            "correlationId": "@{coalesce(trigger().clientTrackingId, '')}",
-                                                            "documentNumber": "@{coalesce(json(base64ToString(triggerBody()?['ContentData']))?['documentNumber'], json(base64ToString(triggerBody()?['ContentData']))?['landings']?[0]?['documentNumber'], '')}",
-                                                            "stage": "document-case-creation",
-                                                            "entity": "document",
-                                                            "entityAction": "create"
-                                                }
+                                        "trackedProperties": {
+                                            "correlationId": "@{coalesce(trigger().clientTrackingId, '')}",
+                                            "documentNumber": "@{coalesce(json(base64ToString(triggerBody()?['ContentData']))?['documentNumber'], json(base64ToString(triggerBody()?['ContentData']))?['landings']?[0]?['documentNumber'], '')}",
+                                            "stage": "document-case-creation",
+                                            "entity": "document",
+                                            "entityAction": "create",
+                                            "message": "@{concat('Document created - ', body('Create_a_new_record')?['mmofe_documentid'])}"
+                                        }
                                     },
-                                    "Set_variable_5": {
+                                    "Set_DocumentId": {
                                         "type": "SetVariable",
                                         "inputs": {
                                             "name": "DocumentId",
@@ -1446,6 +1453,23 @@
                                             "Create_a_new_record": [
                                                 "Succeeded"
                                             ]
+                                        }
+                                    },
+                                    "Log_Document_Created": {
+                                        "type": "Compose",
+                                        "inputs": "document-created",
+                                        "runAfter": {
+                                            "Set_DocumentId": [
+                                                "Succeeded"
+                                            ]
+                                        },
+                                        "trackedProperties": {
+                                            "stage": "document-case-creation",
+                                            "entity": "document",
+                                            "entityAction": "create",
+                                            "message": "@{concat('Document created - ', coalesce(json(base64ToString(triggerBody()?['ContentData']))?['documentNumber'], json(base64ToString(triggerBody()?['ContentData']))?['landings']?[0]?['documentNumber'], ''))}",
+                                            "documentNumber": "@{coalesce(json(base64ToString(triggerBody()?['ContentData']))?['documentNumber'], json(base64ToString(triggerBody()?['ContentData']))?['landings']?[0]?['documentNumber'], '')}",
+                                            "correlationId": "@{coalesce(trigger().clientTrackingId, '')}"
                                         }
                                     },
                                     "Check_Landings_and_Catches": {
@@ -1512,14 +1536,14 @@
                                                     "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('incidents'))}/items"
                                                 },
                                                 "trackedProperties": {
-                                                     "correlationId": "@{coalesce(trigger().clientTrackingId, '')}",
+                                                    "correlationId": "@{coalesce(trigger().clientTrackingId, '')}",
                                                     "documentNumber": "@{coalesce(json(base64ToString(triggerBody()?['ContentData']))?['documentNumber'], json(base64ToString(triggerBody()?['ContentData']))?['landings']?[0]?['documentNumber'], '')}",
                                                     "stage": "document-case-creation",
                                                     "entity": "case",
                                                     "entityAction": "create-new-document"
                                                 }
                                             },
-                                            "Set_variable_9": {
+                                            "Set_CaseId_From_Document": {
                                                 "type": "SetVariable",
                                                 "inputs": {
                                                     "name": "CaseId",
@@ -1536,7 +1560,7 @@
                                             "actions": {}
                                         },
                                         "runAfter": {
-                                            "Set_variable_5": [
+                                            "Log_Document_Created": [
                                                 "Succeeded"
                                             ]
                                         }
@@ -1544,9 +1568,9 @@
                                 },
                                 "else": {
                                     "actions": {
-                                        "For_each_7": {
+                                        "For_Each_Document": {
                                             "type": "Foreach",
-                                            "foreach": "@body('List_records_3')?['value']",
+                                            "foreach": "@body('Query_Document_By_Number')?['value']",
                                             "actions": {
                                                 "Condition": {
                                                     "type": "If",
@@ -1554,42 +1578,42 @@
                                                         "or": [
                                                             {
                                                                 "equals": [
-                                                                    "@items('For_each_7')?['mmofe_processstatus']",
+                                                                    "@items('For_Each_Document')?['mmofe_processstatus']",
                                                                     961040001
                                                                 ]
                                                             },
                                                             {
                                                                 "equals": [
-                                                                    "@items('For_each_7')?['mmofe_processstatus']",
+                                                                    "@items('For_Each_Document')?['mmofe_processstatus']",
                                                                     961040000
                                                                 ]
                                                             },
                                                             {
                                                                 "equals": [
-                                                                    "@items('For_each_7')?['mmofe_processstatus']",
+                                                                    "@items('For_Each_Document')?['mmofe_processstatus']",
                                                                     "@null"
                                                                 ]
                                                             }
                                                         ]
                                                     },
                                                     "actions": {
-                                                        "Set_variable_6": {
+                                                        "Set_DocumentId_From_Document": {
                                                             "type": "SetVariable",
                                                             "inputs": {
                                                                 "name": "DocumentId",
-                                                                "value": "@items('For_each_7')?['mmofe_documentid']"
+                                                                "value": "@items('For_Each_Document')?['mmofe_documentid']"
                                                             }
                                                         },
                                                         "Status_Reason": {
                                                             "type": "Compose",
-                                                            "inputs": "@body('List_records_3')?['value'][0]['statuscode']",
+                                                            "inputs": "@body('Query_Document_By_Number')?['value'][0]['statuscode']",
                                                             "runAfter": {
-                                                                "Set_variable_6": [
+                                                                "Set_DocumentId_From_Document": [
                                                                     "Succeeded"
                                                                 ]
                                                             }
                                                         },
-                                                        "Update_a_record_2": {
+                                                        "Update_Document": {
                                                             "type": "ApiConnection",
                                                             "inputs": {
                                                                 "host": {
@@ -1599,12 +1623,12 @@
                                                                 },
                                                                 "method": "patch",
                                                                 "body": {
-                                                                    "mmofe_documenturl": "@{if(equals(variables('DocumentUrl'),''),body('List_records_3')?['value'][0]['mmofe_documenturl'],variables('DocumentUrl'))}",
+                                                                    "mmofe_documenturl": "@{if(equals(variables('DocumentUrl'),''),body('Query_Document_By_Number')?['value'][0]['mmofe_documenturl'],variables('DocumentUrl'))}",
                                                                     "mmofe_integrationpayload": "@{string(variables('Payload'))}",
                                                                     "statuscode": "@if(contains(variables('Payload'), 'caseType2'), if(contains(variables('Payload')['caseType2'], 'Void by an Exporter'), 961040000, if(contains(variables('Payload')['caseType2'], 'Void by SMO/PMO'), 961040001, 1)), outputs('Status_Reason'))",
                                                                     "_ownerid_type": ""
                                                                 },
-                                                                "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_documents'))}/items/@{encodeURIComponent(encodeURIComponent(items('For_each_7')?['mmofe_documentid']))}"
+                                                                "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('HostUrl')))}/tables/@{encodeURIComponent(encodeURIComponent('mmofe_documents'))}/items/@{encodeURIComponent(encodeURIComponent(items('For_Each_Document')?['mmofe_documentid']))}"
                                                             },
                                                             "runAfter": {
                                                                 "Status_Reason": [
@@ -1612,11 +1636,30 @@
                                                                 ]
                                                             },
                                                             "trackedProperties": {
-                                                                  "correlationId": "@{coalesce(trigger().clientTrackingId, '')}",
-                                                                 "documentNumber": "@{coalesce(json(base64ToString(triggerBody()?['ContentData']))?['documentNumber'], json(base64ToString(triggerBody()?['ContentData']))?['landings']?[0]?['documentNumber'], '')}",
+                                                                "correlationId": "@{coalesce(trigger().clientTrackingId, '')}",
+                                                                "documentNumber": "@{coalesce(json(base64ToString(triggerBody()?['ContentData']))?['documentNumber'], json(base64ToString(triggerBody()?['ContentData']))?['landings']?[0]?['documentNumber'], '')}",
                                                                 "stage": "document-case-creation",
                                                                 "entity": "document",
-                                                                "entityAction": "update"
+                                                                "entityAction": "update",
+                                                                "message": "@{concat('Existing Document Updated - ', items('For_Each_Document')?['mmofe_documentid'])}"
+                                                            }
+                                                        },
+                                                        "Log_Document_Updated": {
+                                                            "type": "Compose",
+                                                            "inputs": "document-updated",
+                                                            "runAfter": {
+                                                                "Update_Document": [
+                                                                    "Succeeded",
+                                                                    "Failed"
+                                                                ]
+                                                            },
+                                                            "trackedProperties": {
+                                                                "stage": "document-case-creation",
+                                                                "entity": "document",
+                                                                "entityAction": "update",
+                                                                "message": "@{concat('Existing Document Updated - ', coalesce(json(base64ToString(triggerBody()?['ContentData']))?['documentNumber'], json(base64ToString(triggerBody()?['ContentData']))?['landings']?[0]?['documentNumber'], ''))}",
+                                                                "documentNumber": "@{coalesce(json(base64ToString(triggerBody()?['ContentData']))?['documentNumber'], json(base64ToString(triggerBody()?['ContentData']))?['landings']?[0]?['documentNumber'], '')}",
+                                                                "correlationId": "@{coalesce(trigger().clientTrackingId, '')}"
                                                             }
                                                         },
                                                         "Get_Case": {
@@ -1632,13 +1675,13 @@
                                                                 "queries": {
                                                                     "$filter": "_mmofe_documentid_value eq '@{variables('DocumentId')}'",
                                                                     "$orderby": "createdon desc",
-                                                                    "$top": 1
+                                                                    "$top": 1,
+                                                                    "$select": "incidentid,mmofe_caseoutcomeatsubmission"
                                                                 }
                                                             },
                                                             "runAfter": {
-                                                                "Update_a_record_2": [
-                                                                    "Succeeded",
-                                                                    "Failed"
+                                                                "Log_Document_Updated": [
+                                                                    "Succeeded"
                                                                 ]
                                                             }
                                                         },
@@ -1720,7 +1763,7 @@
                                                                             },
                                                                             "trackedProperties": {
                                                                                 "correlationId": "@{coalesce(trigger().clientTrackingId, '')}",
-                                                                                "documentNumber": "@{coalesce(json(base64ToString(triggerBody()?['ContentData']))?['documentNumber'], json(base64ToString(triggerBody()?['ContentData']))?['landings']?[0]?['documentNumber'], '')}",   
+                                                                                "documentNumber": "@{coalesce(json(base64ToString(triggerBody()?['ContentData']))?['documentNumber'], json(base64ToString(triggerBody()?['ContentData']))?['landings']?[0]?['documentNumber'], '')}",
                                                                                 "stage": "document-case-creation",
                                                                                 "entity": "case",
                                                                                 "entityAction": "create-existing-document"
@@ -1747,7 +1790,7 @@
                                                             },
                                                             "else": {
                                                                 "actions": {
-                                                                    "For_each_6": {
+                                                                    "For_Each_Case": {
                                                                         "type": "Foreach",
                                                                         "foreach": "@body('Get_Case')?['value']",
                                                                         "actions": {
@@ -1757,7 +1800,7 @@
                                                                                     "and": [
                                                                                         {
                                                                                             "equals": [
-                                                                                                "@items('For_each_6')?['mmofe_caseoutcomeatsubmission']",
+                                                                                                "@items('For_Each_Case')?['mmofe_caseoutcomeatsubmission']",
                                                                                                 961040001
                                                                                             ]
                                                                                         },
@@ -1816,7 +1859,7 @@
                                                                                         },
                                                                                         "trackedProperties": {
                                                                                             "correlationId": "@{coalesce(trigger().clientTrackingId, '')}",
-                                                                                            "documentNumber": "@{coalesce(json(base64ToString(triggerBody()?['ContentData']))?['documentNumber'], json(base64ToString(triggerBody()?['ContentData']))?['landings']?[0]?['documentNumber'], '')}", 
+                                                                                            "documentNumber": "@{coalesce(json(base64ToString(triggerBody()?['ContentData']))?['documentNumber'], json(base64ToString(triggerBody()?['ContentData']))?['landings']?[0]?['documentNumber'], '')}",
                                                                                             "stage": "document-case-creation",
                                                                                             "entity": "case",
                                                                                             "entityAction": "create-resubmission"
@@ -1841,7 +1884,7 @@
                                                                                             "type": "SetVariable",
                                                                                             "inputs": {
                                                                                                 "name": "CaseId",
-                                                                                                "value": "@items('For_each_6')?['incidentid']"
+                                                                                                "value": "@items('For_Each_Case')?['incidentid']"
                                                                                             }
                                                                                         }
                                                                                     }
@@ -1860,7 +1903,7 @@
                                                     },
                                                     "else": {
                                                         "actions": {
-                                                            "Set_variable_17": {
+                                                            "Set_Terminate_Flag": {
                                                                 "type": "SetVariable",
                                                                 "inputs": {
                                                                     "name": "Terminate",
@@ -1896,7 +1939,7 @@
                                                 "actions": {}
                                             },
                                             "runAfter": {
-                                                "For_each_7": [
+                                                "For_Each_Document": [
                                                     "Succeeded"
                                                 ]
                                             }
@@ -1904,7 +1947,7 @@
                                     }
                                 },
                                 "runAfter": {
-                                    "List_records_3": [
+                                    "Query_Document_By_Number": [
                                         "Succeeded"
                                     ]
                                 }
@@ -1967,19 +2010,19 @@
                                 }
                             },
                             "method": "post",
-                            "path": "/@{encodeURIComponent(encodeURIComponent('landing-queue'))}/messages",
                             "body": {
+                                "SessionId": "@variables('DocumentNumber')",
+                                "CorrelationId": "@variables('CorrelationId')",
                                 "ContentData": "@{base64(string(outputs('Build_Handoff_Message')))}",
                                 "ContentType": "application/json",
-                                "C orrelationId": "@variables('CorrelationId')",
-                                "SessionId": "@variables('DocumentNumber')",
                                 "Properties": {
                                     "correlationId": "@variables('CorrelationId')",
                                     "documentNumber": "@variables('DocumentNumber')",
                                     "stage": "document-case-creation",
                                     "messageType": "DocumentCaseReadyForLandings"
                                 }
-                            }
+                            },
+                            "path": "/@{encodeURIComponent(encodeURIComponent('landing-queue'))}/messages"
                         },
                         "runAfter": {
                             "Build_Handoff_Message": [
@@ -1988,7 +2031,7 @@
                         },
                         "trackedProperties": {
                             "correlationId": "@{coalesce(trigger().clientTrackingId, '')}",
-                            "documentNumber": "@{coalesce(json(base64ToString(triggerBody()?['ContentData']))?['documentNumber'], json(base64ToString(triggerBody()?['ContentData']))?['landings']?[0]?['documentNumber'], '')}", 
+                            "documentNumber": "@{coalesce(json(base64ToString(triggerBody()?['ContentData']))?['documentNumber'], json(base64ToString(triggerBody()?['ContentData']))?['landings']?[0]?['documentNumber'], '')}",
                             "stage": "document-case-creation",
                             "messageAction": "handoff"
                         }
@@ -2017,14 +2060,14 @@
                         },
                         "trackedProperties": {
                             "correlationId": "@{coalesce(trigger().clientTrackingId, '')}",
-                            "documentNumber": "@{coalesce(json(base64ToString(triggerBody()?['ContentData']))?['documentNumber'], json(base64ToString(triggerBody()?['ContentData']))?['landings']?[0]?['documentNumber'], '')}", 
+                            "documentNumber": "@{coalesce(json(base64ToString(triggerBody()?['ContentData']))?['documentNumber'], json(base64ToString(triggerBody()?['ContentData']))?['landings']?[0]?['documentNumber'], '')}",
                             "stage": "document-case-creation",
                             "messageAction": "complete"
                         }
                     }
                 },
                 "runAfter": {
-                    "Initialize_Temination": [
+                    "Initialise_ErrorMessage": [
                         "Succeeded"
                     ]
                 }
@@ -2033,6 +2076,25 @@
                 "type": "Scope",
                 "description": "Error handler. On any failure in the document/case stage or hand-off, abandon the source message so Service Bus can redeliver it (native retry, max delivery count 5; auto dead-letters afterwards).",
                 "actions": {
+                    "Extract_Error_Details": {
+                        "type": "Compose",
+                        "description": "Capture the full scope result. result() is valid in action inputs.",
+                        "inputs": "@{string(result('Process_Document_Case_And_Handoff'))}"
+                    },
+                    "Set_ErrorMessage": {
+                        "type": "SetVariable",
+                        "inputs": {
+                            "name": "ErrorMessage",
+                            "value": "@{outputs('Extract_Error_Details')}"
+                        },
+                        "runAfter": {
+                            "Extract_Error_Details": [
+                                "Succeeded",
+                                "Failed",
+                                "Skipped"
+                            ]
+                        }
+                    },
                     "Log_Failure": {
                         "type": "Compose",
                         "inputs": {
@@ -2040,10 +2102,21 @@
                             "documentNumber": "@variables('DocumentNumber')",
                             "stage": "document-case-creation",
                             "outcome": "failed",
-                            "messageAction": "abandon",
-                            "result": "@result('Process_Document_Case_And_Handoff')"
+                            "messageAction": "abandon"
                         },
-                        "runAfter": {}
+                        "runAfter": {
+                            "Set_ErrorMessage": [
+                                "Succeeded",
+                                "Failed",
+                                "Skipped"
+                            ]
+                        },
+                        "trackedProperties": {
+                            "correlationId": "@{coalesce(trigger().clientTrackingId, '')}",
+                            "documentNumber": "@{coalesce(json(base64ToString(triggerBody()?['ContentData']))?['documentNumber'], json(base64ToString(triggerBody()?['ContentData']))?['landings']?[0]?['documentNumber'], '')}",
+                            "stage": "document-case-creation",
+                            "outcome": "failed"
+                        }
                     },
                     "Abandon_the_message_in_a_queue": {
                         "type": "ApiConnection",
@@ -2063,14 +2136,33 @@
                         },
                         "runAfter": {
                             "Log_Failure": [
-                                "Succeeded"
+                                "Succeeded",
+                                "Failed",
+                                "Skipped"
                             ]
                         },
                         "trackedProperties": {
                             "correlationId": "@{coalesce(trigger().clientTrackingId, '')}",
-                            "documentNumber": "@{coalesce(json(base64ToString(triggerBody()?['ContentData']))?['documentNumber'], json(base64ToString(triggerBody()?['ContentData']))?['landings']?[0]?['documentNumber'], '')}", 
+                            "documentNumber": "@{coalesce(json(base64ToString(triggerBody()?['ContentData']))?['documentNumber'], json(base64ToString(triggerBody()?['ContentData']))?['landings']?[0]?['documentNumber'], '')}",
                             "stage": "document-case-creation",
                             "messageAction": "abandon"
+                        }
+                    },
+                    "Terminate_with_Failure": {
+                        "type": "Terminate",
+                        "description": "Fail the run so the error is surfaced in the run history and Application Insights without requiring access to individual action details.",
+                        "inputs": {
+                            "runStatus": "Failed",
+                            "runError": {
+                                "code": "WorkflowFailed",
+                                "message": "@{concat('Stage: document-case-creation | Document: ', variables('DocumentNumber'), ' | Error details: ', variables('ErrorMessage'))}"
+                            }
+                        },
+                        "runAfter": {
+                            "Abandon_the_message_in_a_queue": [
+                                "Succeeded",
+                                "Failed"
+                            ]
                         }
                     }
                 },
